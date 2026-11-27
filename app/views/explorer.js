@@ -1,8 +1,8 @@
-// Indicator Explorer: search across 28 national series, inspect metadata & trend chart, export CSV or JSON
+// Indicator Explorer: live search, domain filter, column sort, 2-indicator comparison mode, and CSV/JSON export
 
 import { INDICATOR_CATALOG } from '../data/indicators.js';
 import { bindChartTooltips, lineChartSvg } from '../components/charts.js';
-import { downloadCsv, downloadJson, esc, renderTable } from '../components/ui.js';
+import { downloadCsv, downloadJson, esc, renderTable, takeawayBox } from '../components/ui.js';
 
 const DOMAINS = ['All', 'Economy', 'Prices', 'Demographics', 'Labor', 'Social', 'Environment'];
 
@@ -10,6 +10,10 @@ export function renderExplorer(root, params) {
   let query = params.get('q') || '';
   let domain = params.get('domain') || 'All';
   let activeCode = INDICATOR_CATALOG[0].code;
+  let compareCode = 'PRC-01';
+  let compareOn = true;
+  let sortKey = 'code';
+  let sortDir = 'asc';
 
   function draw() {
     const qLower = query.trim().toLowerCase();
@@ -23,78 +27,107 @@ export function renderExplorer(root, params) {
         item.domain.toLowerCase().includes(qLower) ||
         item.source.toLowerCase().includes(qLower)
       );
+    }).sort((a, b) => {
+      const va = a[sortKey];
+      const vb = b[sortKey];
+      if (typeof va === 'number' && typeof vb === 'number') {
+        return sortDir === 'asc' ? va - vb : vb - va;
+      }
+      return sortDir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
     });
 
-    const selected = filtered.find((i) => i.code === activeCode) || filtered[0] || null;
-    if (selected) activeCode = selected.code;
+    const primary = filtered.find((i) => i.code === activeCode) || filtered[0] || INDICATOR_CATALOG[0];
+    if (primary) activeCode = primary.code;
+    const secondary = INDICATOR_CATALOG.find((i) => i.code === compareCode) || INDICATOR_CATALOG[10];
 
     const domainPills = DOMAINS.map(
       (d) => `<button type="button" class="pill-btn ${domain === d ? 'active' : ''}" data-domain="${esc(d)}">${esc(d)}</button>`,
     ).join('');
 
-    const inspectorHtml = selected
-      ? `<article class="panel" style="margin-bottom:18px">
-          <div class="panel-head">
-            <div>
-              <span class="kpi-code">${esc(selected.code)} · ${esc(selected.domain)}</span>
-              <h2 class="panel-title" style="margin-top:6px">${esc(selected.name)}</h2>
-              <p class="panel-sub">Latest: <strong>${selected.latest} ${esc(selected.unit)}</strong> (${esc(selected.year)}) · Frequency: ${esc(selected.freq)}</p>
-            </div>
-            <span class="citation-tag">${esc(selected.source)}</span>
-          </div>
-          ${lineChartSvg({
-            labels: selected.years,
-            series: [{ name: `${selected.name} (${selected.unit})`, values: selected.values, color: '#0f4c81', area: true }],
-            unit: selected.unit === '%' ? '%' : '',
-            height: 225,
-          })}
-        </article>`
-      : `<article class="panel" style="margin-bottom:18px"><p>No indicator matches your search filter.</p></article>`;
+    const seriesList = [
+      { name: `${primary.name} (${primary.unit})`, values: primary.values, color: '#16425b', area: true },
+    ];
+    if (compareOn && secondary && secondary.code !== primary.code) {
+      seriesList.push({ name: `${secondary.name} (${secondary.unit})`, values: secondary.values, color: '#9e2a2b', area: false });
+    }
 
+    const compareOptions = INDICATOR_CATALOG.map(
+      (i) => `<option value="${esc(i.code)}" ${i.code === compareCode ? 'selected' : ''}>${esc(i.code)} · ${esc(i.name)} (${esc(i.unit)})</option>`,
+    ).join('');
+
+    const deltaPrimary = (primary.values[primary.values.length - 1] - primary.values[0]).toFixed(2);
     const tableHtml = renderTable({
       tableId: 'explorer-table',
+      sortKey,
+      sortDir,
       columns: [
-        { key: 'code', label: 'Code', render: (v) => `<span class="kpi-code">${esc(v)}</span>` },
-        { key: 'domain', label: 'Domain' },
+        { key: 'code', label: 'Code', sortable: true, render: (v) => `<span class="code-tag">${esc(v)}</span>` },
+        { key: 'domain', label: 'Domain', sortable: true },
         {
           key: 'name',
           label: 'Indicator',
+          sortable: true,
           render: (v, row) =>
-            `<button type="button" class="sort-btn" data-pick="${esc(row.code)}" style="color:#0f4c81;font-weight:700;text-transform:none;letter-spacing:0">${esc(v)}</button>`,
+            `<button type="button" class="sort-btn" data-pick="${esc(row.code)}" style="color:#16425b;font-weight:700">${esc(v)}</button>`,
         },
-        { key: 'latest', label: 'Latest', align: 'num', render: (v, row) => `${v} ${esc(row.unit)}` },
-        { key: 'year', label: 'Period', align: 'num' },
-        { key: 'source', label: 'Source' },
+        { key: 'latest', label: 'Latest', align: 'num', sortable: true, render: (v, row) => `${v} ${esc(row.unit)}` },
+        { key: 'year', label: 'Period', align: 'num', sortable: true },
+        { key: 'source', label: 'Official Source', sortable: true },
       ],
       rows: filtered,
     });
 
     root.innerHTML = `
-      <div class="section-head" style="margin-top:0">
+      <div class="editorial-lead">
         <div>
-          <h1>Statistical Indicator Explorer</h1>
-          <p>Filter 28 national series across six domains, inspect 6-year trends, and export offline datasets.</p>
+          <span class="kicker">Open Statistical Catalog · 28 National Series</span>
+          <h1>Indicator Explorer &amp; Two-Series Comparator</h1>
+          <p>Search across domains, sort series metadata, compare any two indicators over 2020–2025, and export filtered CSV or JSON.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-outline" id="dl-exp-csv">Export CSV</button>
+          <button type="button" class="btn btn-outline" id="dl-exp-csv">Export Filtered CSV</button>
           <button type="button" class="btn btn-outline" id="dl-exp-json">Export JSON</button>
         </div>
       </div>
 
-      <article class="panel" style="margin-bottom:18px">
-        <div class="controls-bar" style="margin-bottom:0">
-          <input class="control-input" id="exp-search" type="search" value="${esc(query)}" placeholder="Filter by keyword, code, or source..." style="min-width:230px;flex:1">
+      <article class="panel" style="margin-bottom:12px">
+        <div class="controls-bar" style="margin-bottom:8px">
+          <input class="control-input" id="exp-search" type="search" value="${esc(query)}" placeholder="Search keyword, code (ECO-01), or source..." style="min-width:220px;flex:1">
           <div class="pill-group">${domainPills}</div>
+        </div>
+        <div class="controls-bar" style="margin-bottom:0">
+          <label style="font-size:0.8rem;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+            <input type="checkbox" id="toggle-compare" ${compareOn ? 'checked' : ''}> Compare with:
+          </label>
+          <select class="control-select" id="compare-select" aria-label="Secondary indicator" ${compareOn ? '' : 'disabled'} style="max-width:420px;flex:1">
+            ${compareOptions}
+          </select>
         </div>
       </article>
 
-      ${inspectorHtml}
+      <article class="panel" style="margin-bottom:12px">
+        <div class="panel-head">
+          <div>
+            <span class="code-tag">${esc(primary.code)} · ${esc(primary.domain)}</span>
+            <h2 class="panel-title" style="margin-top:5px">${esc(primary.name)}</h2>
+            <p class="panel-sub">Latest: <strong>${primary.latest} ${esc(primary.unit)}</strong> (${esc(primary.year)}) · 2020–2025 net change: ${Number(deltaPrimary) >= 0 ? '+' : ''}${deltaPrimary} ${esc(primary.unit)}</p>
+          </div>
+          <span class="code-tag">${esc(primary.source)} · ${esc(primary.year)}</span>
+        </div>
+        ${lineChartSvg({
+          labels: primary.years,
+          series: seriesList,
+          unit: primary.unit === '%' && (!compareOn || secondary.unit === '%') ? '%' : '',
+          height: 205,
+        })}
+        ${takeawayBox(`Primary series ${primary.code} (${primary.source}, ${primary.year}) ${compareOn && secondary ? `plotted alongside ${secondary.code} (${secondary.name}: ${secondary.latest} ${secondary.unit})` : 'over 2020–2025'}.`)}
+      </article>
 
       <article class="panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">Matching Series (${filtered.length} of ${INDICATOR_CATALOG.length})</h3>
-            <p class="panel-sub">Click any indicator name to load its chart above.</p>
+            <p class="panel-sub">Click any indicator title to load it as the primary series, or click headers to sort.</p>
           </div>
         </div>
         ${tableHtml}
@@ -103,8 +136,7 @@ export function renderExplorer(root, params) {
 
     bindChartTooltips(root);
 
-    const searchInput = root.querySelector('#exp-search');
-    searchInput?.addEventListener('input', (ev) => {
+    root.querySelector('#exp-search')?.addEventListener('input', (ev) => {
       query = ev.target.value;
       draw();
       const el = root.querySelector('#exp-search');
@@ -121,9 +153,31 @@ export function renderExplorer(root, params) {
       });
     });
 
+    root.querySelector('#toggle-compare')?.addEventListener('change', (ev) => {
+      compareOn = ev.target.checked;
+      draw();
+    });
+
+    root.querySelector('#compare-select')?.addEventListener('change', (ev) => {
+      compareCode = ev.target.value;
+      draw();
+    });
+
     root.querySelectorAll('[data-pick]').forEach((btn) => {
       btn.addEventListener('click', () => {
         activeCode = btn.dataset.pick;
+        draw();
+      });
+    });
+
+    root.querySelectorAll('#explorer-table .sort-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const nextKey = btn.dataset.sort;
+        if (sortKey === nextKey) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+        else {
+          sortKey = nextKey;
+          sortDir = 'asc';
+        }
         draw();
       });
     });

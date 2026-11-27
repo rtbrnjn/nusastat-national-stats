@@ -2,7 +2,7 @@
 
 import { LABOR_TRANSITION, PYRAMID_2025, PYRAMID_2035, SOCIAL_PROGRESS_INDICATORS, URBANIZATION_TREND } from '../data/demographics.js';
 import { bindChartTooltips, horizontalBarsSvg, lineChartSvg, pyramidSvg } from '../components/charts.js';
-import { downloadCsv, kpiCard, renderTable } from '../components/ui.js';
+import { downloadCsv, kpiCard, renderTable, takeawayBox } from '../components/ui.js';
 
 export function renderDemographics(root) {
   let cohortYear = '2025';
@@ -12,30 +12,39 @@ export function renderDemographics(root) {
 
     const kpis = [
       kpiCard({
-        code: 'DEM-2025',
+        code: 'DEM-01',
         label: 'Median Age',
         value: '30.6 yrs',
-        delta: '69.2% working-age',
+        delta: '69.2% age 15-64',
         tone: 'good',
-        source: 'Population Census Projection',
+        source: 'BPS · SUPAS',
         year: '2025',
       }),
       kpiCard({
-        code: 'LAB-2025',
-        label: 'Employed Workforce',
+        code: 'LAB-02',
+        label: 'Workforce',
         value: '144.6M',
-        delta: '70.6% participation',
+        delta: '70.6% active',
         tone: 'good',
-        source: 'SAKERNAS Survey',
+        source: 'BPS · SAKERNAS',
         year: 'Aug 2025',
       }),
       kpiCard({
-        code: 'URB-2025',
-        label: 'Urban Population Share',
+        code: 'URB-01',
+        label: 'Urban Share',
         value: '59.8%',
-        delta: '+17.8 pp since 2000',
+        delta: '+17.8 pp vs 2000',
         tone: 'neutral',
-        source: 'Urban-Rural Classification',
+        source: 'BPS · Census',
+        year: '2025',
+      }),
+      kpiCard({
+        code: 'HLT-01',
+        label: 'Life Expectancy',
+        value: '74.15 y',
+        delta: 'TFR 2.11',
+        tone: 'good',
+        source: 'BPS · Vital Stats',
         year: '2025',
       }),
     ].join('');
@@ -43,11 +52,11 @@ export function renderDemographics(root) {
     const urbanChart = lineChartSvg({
       labels: URBANIZATION_TREND.years,
       series: [
-        { name: 'Urban Share (%)', values: URBANIZATION_TREND.urbanPct, color: '#0f4c81', area: true },
-        { name: 'Rural Share (%)', values: URBANIZATION_TREND.ruralPct, color: '#047857' },
+        { name: 'Urban Share (%)', values: URBANIZATION_TREND.urbanPct, color: '#16425b', area: true },
+        { name: 'Rural Share (%)', values: URBANIZATION_TREND.ruralPct, color: '#0f766e' },
       ],
       unit: '%',
-      height: 225,
+      height: 205,
     });
 
     const socialTable = renderTable({
@@ -55,29 +64,30 @@ export function renderDemographics(root) {
         { key: 'indicator', label: 'Social & Demographic Indicator' },
         { key: 'value', label: 'Latest Reading', align: 'num' },
         { key: 'change', label: 'Trend / Context' },
-        { key: 'year', label: 'Ref. Period', align: 'num' },
+        { key: 'year', label: 'Period', align: 'num' },
         { key: 'source', label: 'Source' },
       ],
       rows: SOCIAL_PROGRESS_INDICATORS,
     });
 
     root.innerHTML = `
-      <div class="section-head" style="margin-top:0">
+      <div class="editorial-lead">
         <div>
-          <h1>Demographics, Labor &amp; Social Progress</h1>
-          <p>Age-sex population structure, urbanization trajectory, employment composition, and human capital indicators.</p>
+          <span class="kicker">Population Census, SAKERNAS &amp; SUSENAS · 2025</span>
+          <h1>Demographics, Labor Force &amp; Human Capital</h1>
+          <p>Age-sex cohorts (2025 vs. 2035), urban transition, employment shifts, and living standard benchmarks.</p>
         </div>
         <button class="btn btn-outline" id="export-demo-csv" type="button">Download Social CSV</button>
       </div>
 
-      <section class="kpi-grid" style="margin-bottom:18px">${kpis}</section>
+      <section class="kpi-strip">${kpis}</section>
 
-      <section class="grid-2" style="margin-bottom:18px">
+      <section class="grid-2">
         <article class="panel">
           <div class="panel-head">
             <div>
-              <h2 class="panel-title">Population Pyramid (% of Total Population)</h2>
-              <p class="panel-sub">5-year age cohorts by sex (${cohortYear === '2035' ? 'Projected 2035' : 'Baseline 2025'})</p>
+              <h2 class="panel-title">Population Pyramid (% Share)</h2>
+              <p class="panel-sub">5-year cohorts · ${cohortYear === '2035' ? 'Projected 2035' : 'Baseline 2025'} · BPS SP2020/SUPAS</p>
             </div>
             <div class="pill-group">
               <button type="button" class="pill-btn ${cohortYear === '2025' ? 'active' : ''}" data-pyr="2025">2025</button>
@@ -85,28 +95,29 @@ export function renderDemographics(root) {
             </div>
           </div>
           ${pyramidSvg(cohorts)}
-          <p class="panel-sub" style="margin-top:8px">Source: Intercensal Population Survey &amp; SP2020 Cohort Projection (${cohortYear}).</p>
+          ${takeawayBox('69.2% of residents sit in ages 15–64 in 2025, sustaining a prime demographic dividend window through the early 2030s.')}
         </article>
 
         <article class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">Urban vs. Rural Population Shift (2000–2025)</h3>
-              <p class="panel-sub">Share of resident population living in urban settlements</p>
+              <h3 class="panel-title">Urban vs. Rural Population Transition (2000–2025)</h3>
+              <p class="panel-sub">Share of resident population in urban settlements</p>
             </div>
-            <span class="citation-tag">Census Series · 2025</span>
+            <span class="code-tag">BPS · Census Series 2025</span>
           </div>
           ${urbanChart}
+          ${takeawayBox('Nearly 6 in 10 Indonesians now live in urban areas, accelerating formal service employment and housing demand.')}
         </article>
       </section>
 
-      <article class="panel" style="margin-bottom:18px">
+      <article class="panel" style="margin-bottom:12px">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">Employment Distribution by Broad Sector</h3>
-            <p class="panel-sub">Share of 144.6 million employed workers (SAKERNAS August 2025)</p>
+            <h3 class="panel-title">Employment Distribution Across Major Sectors</h3>
+            <p class="panel-sub">Share of 144.6M employed workers · Source: BPS SAKERNAS August 2025</p>
           </div>
-          <span class="citation-tag">SAKERNAS · Aug 2025</span>
+          <span class="code-tag">BPS · SAKERNAS Aug 2025</span>
         </div>
         ${horizontalBarsSvg({ items: LABOR_TRANSITION, valueSuffix: '%', maxVal: 55 })}
       </article>
@@ -117,7 +128,7 @@ export function renderDemographics(root) {
             <h3 class="panel-title">Health, Education &amp; Household Living Standards</h3>
             <p class="panel-sub">Verified social indicators with official source and reference year</p>
           </div>
-          <span class="citation-tag">SUSENAS &amp; SAKERNAS · 2025</span>
+          <span class="code-tag">BPS · SUSENAS 2025</span>
         </div>
         ${socialTable}
       </article>

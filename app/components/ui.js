@@ -1,4 +1,4 @@
-// Reusable UI helpers: HTML escaping, formatting, KPI cards, tables, and offline CSV/JSON export
+// Shared UI builders: escaping, numeric formatting, KPI cards, takeaway callouts, sortable tables, CSV/JSON export
 
 export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (ch) => `&#${ch.charCodeAt(0)};`);
@@ -16,12 +16,16 @@ export function fmtNum(value, decimals = 1) {
 export function kpiCard(item, sparkSvg = '') {
   const toneClass =
     item.tone === 'good' ? 'delta-good' : item.tone === 'signal' ? 'delta-signal' : 'delta-neutral';
-  const wrapStart = item.route ? `<a href="${esc(item.route)}" class="kpi-card" style="color:inherit;text-decoration:none">` : '<article class="kpi-card">';
-  const wrapEnd = item.route ? '</a>' : '</article>';
-  return `${wrapStart}
+  const accentClass =
+    item.tone === 'signal' ? 'accent-crimson' : item.tone === 'good' ? 'accent-teal' : '';
+  const openTag = item.route
+    ? `<a href="${esc(item.route)}" class="kpi-card ${accentClass}" style="color:inherit;text-decoration:none">`
+    : `<article class="kpi-card ${accentClass}">`;
+  const closeTag = item.route ? '</a>' : '</article>';
+  return `${openTag}
     <div class="kpi-top">
       <span class="kpi-label">${esc(item.label)}</span>
-      <span class="kpi-code">${esc(item.code)}</span>
+      <span class="code-tag">${esc(item.code)}</span>
     </div>
     <div class="kpi-main">
       <span class="kpi-value">${esc(item.value)}</span>
@@ -32,7 +36,11 @@ export function kpiCard(item, sparkSvg = '') {
       <span>${esc(item.source)}</span>
       <strong>${esc(item.year)}</strong>
     </div>
-  ${wrapEnd}`;
+  ${closeTag}`;
+}
+
+export function takeawayBox(text, label = 'Key Takeaway') {
+  return `<div class="takeaway"><strong>${esc(label)}:</strong> ${esc(text)}</div>`;
 }
 
 export function renderTable({ columns, rows, sortKey = '', sortDir = 'asc', tableId = '' }) {
@@ -68,30 +76,30 @@ export function renderTable({ columns, rows, sortKey = '', sortDir = 'asc', tabl
 }
 
 export function downloadCsv(filename, headers, rows) {
-  const escapeCell = (val) => {
-    const str = String(val ?? '');
-    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  const cell = (v) => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const csv = [headers.map(escapeCell).join(','), ...rows.map((r) => r.map(escapeCell).join(','))].join('\n');
+  const csv = [headers.map(cell).join(','), ...rows.map((r) => r.map(cell).join(','))].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function downloadJson(filename, payload) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

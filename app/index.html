@@ -3,73 +3,70 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NusaStat · Republic of Indonesia National Statistical Portal</title>
-<meta name="description" content="Official-grade statistical reference for Indonesia: macroeconomy, prices, demographics, labor, provinces, and open data exports.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f4c81'/%3E%3Cpath d='M6 22l5-7 5 3 5-8 5 4v8H6z' fill='%23ffffff' opacity='.92'/%3E%3Ccircle cx='21' cy='10' r='2.5' fill='%23f59e0b'/%3E%3C/svg%3E">
+<title>NusaStat · Indonesia National Statistical Almanac</title>
+<meta name="description" content="Offline-first national statistics portal for Indonesia: national accounts, prices, demographics, 38-province atlas, and data explorer.">
 <link rel="stylesheet" href="style.css">
 <script type="module" src="main.js"></script>
 </head>
 <body>
-<div class="utility-bar">
-  <div class="shell utility-inner">
-    <span>Republic of Indonesia · Statistical Reference Portal</span>
-    <span>Reference Cycle: FY 2025 / Q1 2026 · Offline Static Edition</span>
+<div class="edition-strip">
+  <div class="shell strip-row">
+    <span><strong>REPUBLIC OF INDONESIA</strong> · National Statistical Almanac</span>
+    <span>FY 2025 / Q1 2026 Cycle · Offline Static Edition · All Sources Cited</span>
   </div>
 </div>
 
-<header class="site-header">
-  <div class="shell header-inner">
+<header class="masthead">
+  <div class="shell masthead-row">
     <a class="brand" href="#/" aria-label="NusaStat Home">
-      <svg class="brand-mark" viewBox="0 0 36 36" width="32" height="32" aria-hidden="true">
-        <rect width="36" height="36" rx="8" fill="#0f4c81"/>
-        <rect x="7" y="20" width="4" height="9" rx="1" fill="#93c5fd"/>
-        <rect x="13" y="15" width="4" height="14" rx="1" fill="#ffffff"/>
-        <rect x="19" y="11" width="4" height="18" rx="1" fill="#ffffff"/>
-        <rect x="25" y="16" width="4" height="13" rx="1" fill="#f59e0b"/>
+      <svg class="brand-mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+        <rect width="32" height="32" rx="4" fill="#16425b"/>
+        <rect x="0" y="0" width="32" height="4" fill="#9e2a2b"/>
+        <rect x="6" y="18" width="4" height="9" fill="#cbd5e1"/>
+        <rect x="12" y="13" width="4" height="14" fill="#ffffff"/>
+        <rect x="18" y="9" width="4" height="18" fill="#ffffff"/>
+        <rect x="24" y="15" width="4" height="12" fill="#e09f3e"/>
       </svg>
-      <span class="brand-text">
+      <span class="brand-copy">
         <strong>NusaStat</strong>
         <small>National Statistics Observatory</small>
       </span>
     </a>
 
-    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">
-      <span class="nav-toggle-bars" aria-hidden="true"></span>
-      <span>Menu</span>
-    </button>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
 
-    <nav class="primary-nav" id="primary-nav" aria-label="Primary navigation">
+    <nav class="primary-nav" id="primary-nav" aria-label="Primary">
       <a href="#/" data-route="home">Overview</a>
       <a href="#/economy" data-route="economy">Economy</a>
       <a href="#/demographics" data-route="demographics">Demographics</a>
-      <a href="#/regions" data-route="regions">Regions</a>
+      <a href="#/regions" data-route="regions">38 Provinces</a>
       <a href="#/explorer" data-route="explorer">Explorer</a>
       <a href="#/methodology" data-route="methodology">Methodology</a>
     </nav>
 
-    <form class="quick-search" id="quick-search" role="search">
-      <label class="sr-only" for="quick-search-input">Search statistical indicators</label>
-      <input id="quick-search-input" type="search" placeholder="Search GDP, CPI, Java..." autocomplete="off">
+    <form class="search-bar" id="quick-search" role="search">
+      <label class="sr-only" for="quick-search-input">Search indicators</label>
+      <input id="quick-search-input" type="search" placeholder="Search GDP, CPI, Papua..." autocomplete="off">
       <button type="submit">Find</button>
     </form>
   </div>
 </header>
 
-<main id="app" class="shell page-main" tabindex="-1"></main>
+<main id="app" class="shell page-main" tabindex="-1">
+  <p class="loading-note">Loading statistical datasets…</p>
+</main>
 
 <footer class="site-footer">
-  <div class="shell footer-grid">
-    <div>
-      <strong>NusaStat · Republic of Indonesia Statistical Observatory</strong>
-      <p>Compiled from National Census (SP2020/SUPAS), National Socioeconomic Survey (SUSENAS), Labor Force Survey (SAKERNAS), System of National Accounts, and Monetary Policy Reports.</p>
-    </div>
-    <div class="footer-links">
-      <a href="#/economy">Macroeconomy</a>
-      <a href="#/demographics">Population &amp; Labor</a>
-      <a href="#/regions">Provincial Atlas</a>
-      <a href="#/explorer">Data Explorer</a>
-      <a href="#/methodology">Release Calendar</a>
-    </div>
+  <div class="shell footer-row">
+    <p><strong>NusaStat</strong> · Indonesia Statistical Observatory · Sources: BPS (SNA, SUSENAS, SAKERNAS, SP2020), Bank Indonesia &amp; MoF (2019–2026).</p>
+    <nav class="footer-nav" aria-label="Footer">
+      <a href="#/">Overview</a>
+      <a href="#/economy">Economy</a>
+      <a href="#/demographics">Demographics</a>
+      <a href="#/regions">38 Provinces</a>
+      <a href="#/explorer">Explorer</a>
+      <a href="#/methodology">Methodology</a>
+    </nav>
   </div>
 </footer>
 </body>

@@ -1,66 +1,61 @@
-// Regional Atlas & Provincial Comparison view
+// 38-Province Regional Atlas: interactive SVG choropleth map, province comparison, and full 38-row table
 
-import { MACRO_REGIONS, PROVINCES } from '../data/regions.js';
+import { MACRO_REGIONS, PROVINCES_38 } from '../data/regions.js';
 import { bindChartTooltips } from '../components/charts.js';
-import { downloadCsv, esc, fmtNum, renderTable } from '../components/ui.js';
+import { renderArchipelagoMap } from '../components/map-svg.js';
+import { downloadCsv, esc, fmtNum, renderTable, takeawayBox } from '../components/ui.js';
+
+const MAP_METRICS = {
+  grdpPerCapitaUsd: { label: 'GRDP / Capita ($)', format: (v) => `$${Math.round(v).toLocaleString('en-US')}`, invert: false },
+  growth: { label: 'Real Growth (%)', format: (v) => `+${fmtNum(v, 2)}%`, invert: false },
+  hdi: { label: 'HDI Score', format: (v) => fmtNum(v, 2), invert: false },
+  poverty: { label: 'Poverty Rate (%)', format: (v) => `${fmtNum(v, 2)}%`, invert: true },
+  popM: { label: 'Population (M)', format: (v) => `${fmtNum(v, 1)}M`, invert: false },
+};
 
 export function renderRegions(root) {
   let selectedRegion = 'all';
   let activeMapId = 'java';
+  let metricKey = 'grdpPerCapitaUsd';
   let sortKey = 'grdpPerCapitaUsd';
   let sortDir = 'desc';
   let provA = 'ID-JK';
   let provB = 'ID-KI';
 
-  function archipelagoMapSvg() {
-    const nodes = MACRO_REGIONS.map((reg) => {
-      const { x, y, w, h } = reg.box;
-      const isSelected = activeMapId === reg.id;
-      const fill =
-        reg.growth >= 6.0 ? '#0f4c81' : reg.growth >= 5.2 ? '#2563eb' : '#3b82f6';
-      return `<g class="map-region-node ${isSelected ? 'selected' : ''}" tabindex="0" role="button" aria-label="Select ${esc(reg.name)} region" data-map-region="${esc(reg.id)}" data-tip="${esc(reg.name)}: ${reg.gdpShare}% GDP share · +${reg.growth}% growth">
-        <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${fill}" opacity="${isSelected ? '0.96' : '0.78'}" stroke="#ffffff" stroke-width="1.5" />
-        <text x="${x + 10}" y="${y + 22}" font-size="11.5" font-weight="700" fill="#ffffff">${esc(reg.name)}</text>
-        <text x="${x + 10}" y="${y + 38}" font-size="10.5" fill="#dbeafe">${reg.gdpShare}% GDP · +${reg.growth}%</text>
-      </g>`;
-    }).join('');
-
-    return `<div class="chart-wrap">
-      <div class="chart-tooltip"></div>
-      <svg class="chart-svg" viewBox="0 0 645 228" role="img" aria-label="Interactive Archipelago Macro-Region Map">
-        <rect x="0" y="0" width="645" height="228" rx="10" fill="#eef4fa" />
-        <path d="M10 148 Q160 135 310 152 T635 144" fill="none" stroke="#cbd5e1" stroke-dasharray="4 4" />
-        ${nodes}
-      </svg>
-    </div>`;
-  }
-
   function draw() {
+    const metric = MAP_METRICS[metricKey];
     const activeReg = MACRO_REGIONS.find((r) => r.id === activeMapId) || MACRO_REGIONS[0];
-    const visibleProvs = PROVINCES.filter((p) => selectedRegion === 'all' || p.region === selectedRegion).sort((a, b) => {
+    const visibleProvs = PROVINCES_38.filter((p) => selectedRegion === 'all' || p.region === selectedRegion).sort((a, b) => {
       const va = a[sortKey];
       const vb = b[sortKey];
       if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
       return sortDir === 'asc' ? va - vb : vb - va;
     });
 
-    const p1 = PROVINCES.find((p) => p.code === provA) || PROVINCES[0];
-    const p2 = PROVINCES.find((p) => p.code === provB) || PROVINCES[9];
+    const p1 = PROVINCES_38.find((p) => p.code === provA) || PROVINCES_38[10];
+    const p2 = PROVINCES_38.find((p) => p.code === provB) || PROVINCES_38[19];
 
     const provOptions = (currentCode) =>
-      PROVINCES.map(
+      PROVINCES_38.map(
         (p) => `<option value="${esc(p.code)}" ${p.code === currentCode ? 'selected' : ''}>${esc(p.name)}</option>`,
       ).join('');
+
+    const metricPills = Object.entries(MAP_METRICS)
+      .map(
+        ([k, m]) =>
+          `<button type="button" class="pill-btn ${metricKey === k ? 'active' : ''}" data-metric="${esc(k)}">${esc(m.label)}</button>`,
+      )
+      .join('');
 
     const tableHtml = renderTable({
       tableId: 'province-table',
       sortKey,
       sortDir,
       columns: [
-        { key: 'name', label: 'Province', sortable: true },
+        { key: 'name', label: 'Province (38)', sortable: true },
         { key: 'region', label: 'Macro-Region', sortable: true, render: (v) => esc(MACRO_REGIONS.find((r) => r.id === v)?.name || v) },
-        { key: 'popM', label: 'Pop. (M)', align: 'num', sortable: true, render: (v) => fmtNum(v, 1) },
-        { key: 'grdpPerCapitaUsd', label: 'GRDP / Cap ($)', align: 'num', sortable: true, render: (v) => `$${v.toLocaleString('en-US')}` },
+        { key: 'popM', label: 'Pop. (M)', align: 'num', sortable: true, render: (v) => fmtNum(v, 2) },
+        { key: 'grdpPerCapitaUsd', label: 'GRDP / Cap', align: 'num', sortable: true, render: (v) => `$${v.toLocaleString('en-US')}` },
         { key: 'growth', label: 'Growth', align: 'num', sortable: true, render: (v) => `+${fmtNum(v, 2)}%` },
         { key: 'poverty', label: 'Poverty', align: 'num', sortable: true, render: (v) => `${fmtNum(v, 2)}%` },
         { key: 'unemployment', label: 'Unemp.', align: 'num', sortable: true, render: (v) => `${fmtNum(v, 2)}%` },
@@ -70,91 +65,92 @@ export function renderRegions(root) {
     });
 
     root.innerHTML = `
-      <div class="section-head" style="margin-top:0">
+      <div class="editorial-lead">
         <div>
-          <h1>Regional Atlas &amp; Provincial Benchmarks</h1>
-          <p>Click any archipelago macro-region to inspect economic structure, compare provinces side by side, or filter the table.</p>
+          <span class="kicker">Regional Accounts &amp; SUSENAS · 38 Provinces</span>
+          <h1>Indonesian Archipelago Choropleth &amp; Provincial Atlas</h1>
+          <p>Switch map indicators, click any island region or provincial marker, compare two provinces directly, or sort all 38 provinces.</p>
         </div>
-        <button class="btn btn-outline" id="export-reg-csv" type="button">Download Provincial CSV</button>
+        <button class="btn btn-outline" id="export-reg-csv" type="button">Download 38-Province CSV</button>
       </div>
 
-      <section class="grid-sidebar" style="margin-bottom:18px">
+      <section class="grid-atlas" style="margin-bottom:28px">
         <article class="panel">
           <div class="panel-head">
             <div>
-              <h2 class="panel-title">Archipelago Macro-Region Cartogram</h2>
-              <p class="panel-sub">Click a region block to inspect its 2025 output, demographics, and growth drivers</p>
+              <h2 class="panel-title">Indonesia Choropleth Map · ${esc(metric.label)}</h2>
+              <p class="panel-sub">Islands shaded by macro-region; circular markers show all 38 provincial readings</p>
             </div>
-            <span class="citation-tag">Regional Accounts · 2025</span>
+            <span class="code-tag">BPS · Regional SNA 2025</span>
           </div>
-          ${archipelagoMapSvg()}
+          <div class="controls-bar">
+            <div class="pill-group">${metricPills}</div>
+          </div>
+          ${renderArchipelagoMap({
+            macroRegions: MACRO_REGIONS,
+            provinces: PROVINCES_38,
+            metricKey,
+            metricLabel: metric.label,
+            metricFormat: metric.format,
+            invertScale: metric.invert,
+            activeRegionId: activeMapId,
+            activeProvCode: provA,
+          })}
+          ${takeawayBox('Java generates 57.1% of national GDP, while mineral-downstreaming provinces in Sulawesi (+6.12%) and Maluku-Papua (+6.45%) lead real output growth.')}
         </article>
 
         <article class="panel">
           <div class="panel-head">
             <div>
-              <h3 class="panel-title">${esc(activeReg.name)} Region Profile</h3>
-              <p class="panel-sub">${activeReg.provincesCount} provinces · Reference year 2025</p>
+              <h3 class="panel-title">${esc(activeReg.name)} Region · ${activeReg.provincesCount} Provinces</h3>
+              <p class="panel-sub">Macro-regional summary · FY 2025</p>
             </div>
             <button type="button" class="btn btn-outline" id="filter-to-active">Filter Table</button>
           </div>
-          <div class="compare-box">
+          <div class="compare-box" style="margin-bottom:10px">
             <div class="compare-metric"><span>Share of National GDP</span><strong>${fmtNum(activeReg.gdpShare, 1)}%</strong></div>
             <div class="compare-metric"><span>Resident Population</span><strong>${fmtNum(activeReg.popM, 1)}M</strong></div>
+            <div class="compare-metric"><span>Mean GRDP / Capita</span><strong>$${activeReg.grdpPerCapitaUsd.toLocaleString('en-US')}</strong></div>
             <div class="compare-metric"><span>Real GRDP Growth</span><strong>+${fmtNum(activeReg.growth, 2)}%</strong></div>
             <div class="compare-metric"><span>Human Dev. Index (Avg)</span><strong>${fmtNum(activeReg.hdi, 1)}</strong></div>
             <div class="compare-metric"><span>Poverty Rate</span><strong>${fmtNum(activeReg.poverty, 1)}%</strong></div>
           </div>
-          <p class="panel-sub" style="margin-top:10px"><strong>Key drivers:</strong> ${esc(activeReg.leadDriver)}</p>
+          <p class="panel-sub" style="margin-bottom:10px"><strong>Economic base:</strong> ${esc(activeReg.leadDriver)}</p>
+
+          <h4 class="panel-title" style="font-size:0.92rem;margin-bottom:6px">Compare Any Two Provinces</h4>
+          <div class="controls-bar" style="margin-bottom:8px">
+            <select class="control-select" id="prov-a" aria-label="Province A" style="flex:1">${provOptions(p1.code)}</select>
+            <select class="control-select" id="prov-b" aria-label="Province B" style="flex:1">${provOptions(p2.code)}</select>
+          </div>
+          <div class="compare-grid">
+            <div class="compare-box">
+              <strong style="display:block;font-size:0.82rem;margin-bottom:4px">${esc(p1.name)}</strong>
+              <div class="compare-metric"><span>GRDP/Cap</span><strong>$${p1.grdpPerCapitaUsd.toLocaleString('en-US')}</strong></div>
+              <div class="compare-metric"><span>Growth</span><strong>+${fmtNum(p1.growth, 2)}%</strong></div>
+              <div class="compare-metric"><span>Poverty</span><strong>${fmtNum(p1.poverty, 2)}%</strong></div>
+              <div class="compare-metric"><span>HDI</span><strong>${fmtNum(p1.hdi, 2)}</strong></div>
+            </div>
+            <div class="compare-box">
+              <strong style="display:block;font-size:0.82rem;margin-bottom:4px">${esc(p2.name)}</strong>
+              <div class="compare-metric"><span>GRDP/Cap</span><strong>$${p2.grdpPerCapitaUsd.toLocaleString('en-US')}</strong></div>
+              <div class="compare-metric"><span>Growth</span><strong>+${fmtNum(p2.growth, 2)}%</strong></div>
+              <div class="compare-metric"><span>Poverty</span><strong>${fmtNum(p2.poverty, 2)}%</strong></div>
+              <div class="compare-metric"><span>HDI</span><strong>${fmtNum(p2.hdi, 2)}</strong></div>
+            </div>
+          </div>
         </article>
       </section>
-
-      <article class="panel" style="margin-bottom:18px">
-        <div class="panel-head">
-          <div>
-            <h3 class="panel-title">Side-by-Side Province Comparison</h3>
-            <p class="panel-sub">Compare economic output, living standards, and labor indicators across two provinces</p>
-          </div>
-          <span class="citation-tag">SUSENAS &amp; Regional SNA · 2025</span>
-        </div>
-        <div class="controls-bar">
-          <label>Province A:
-            <select class="control-select" id="prov-a">${provOptions(p1.code)}</select>
-          </label>
-          <label>Province B:
-            <select class="control-select" id="prov-b">${provOptions(p2.code)}</select>
-          </label>
-        </div>
-        <div class="compare-grid">
-          <div class="compare-box">
-            <strong style="display:block;margin-bottom:6px">${esc(p1.name)} (${esc(p1.code)})</strong>
-            <div class="compare-metric"><span>Population</span><strong>${fmtNum(p1.popM, 1)}M</strong></div>
-            <div class="compare-metric"><span>GRDP per Capita</span><strong>$${p1.grdpPerCapitaUsd.toLocaleString('en-US')}</strong></div>
-            <div class="compare-metric"><span>Real Growth (2025)</span><strong>+${fmtNum(p1.growth, 2)}%</strong></div>
-            <div class="compare-metric"><span>Poverty Rate</span><strong>${fmtNum(p1.poverty, 2)}%</strong></div>
-            <div class="compare-metric"><span>Human Dev. Index</span><strong>${fmtNum(p1.hdi, 2)}</strong></div>
-          </div>
-          <div class="compare-box">
-            <strong style="display:block;margin-bottom:6px">${esc(p2.name)} (${esc(p2.code)})</strong>
-            <div class="compare-metric"><span>Population</span><strong>${fmtNum(p2.popM, 1)}M</strong></div>
-            <div class="compare-metric"><span>GRDP per Capita</span><strong>$${p2.grdpPerCapitaUsd.toLocaleString('en-US')}</strong></div>
-            <div class="compare-metric"><span>Real Growth (2025)</span><strong>+${fmtNum(p2.growth, 2)}%</strong></div>
-            <div class="compare-metric"><span>Poverty Rate</span><strong>${fmtNum(p2.poverty, 2)}%</strong></div>
-            <div class="compare-metric"><span>Human Dev. Index</span><strong>${fmtNum(p2.hdi, 2)}</strong></div>
-          </div>
-        </div>
-      </article>
 
       <article class="panel">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">Provincial Indicators Registry (${visibleProvs.length} shown)</h3>
-            <p class="panel-sub">Filter by macro-region or sort by any column</p>
+            <h3 class="panel-title">All 38 Indonesian Provinces (${visibleProvs.length} shown)</h3>
+            <p class="panel-sub">Filter by island group or click any header to sort · Source: BPS Regional SNA, SAKERNAS &amp; SUSENAS 2025</p>
           </div>
         </div>
         <div class="controls-bar">
           <div class="pill-group">
-            <button type="button" class="pill-btn ${selectedRegion === 'all' ? 'active' : ''}" data-reg="all">All Regions</button>
+            <button type="button" class="pill-btn ${selectedRegion === 'all' ? 'active' : ''}" data-reg="all">All 38 Provinces</button>
             ${MACRO_REGIONS.map(
               (r) => `<button type="button" class="pill-btn ${selectedRegion === r.id ? 'active' : ''}" data-reg="${esc(r.id)}">${esc(r.name)}</button>`,
             ).join('')}
@@ -166,17 +162,34 @@ export function renderRegions(root) {
 
     bindChartTooltips(root);
 
+    root.querySelectorAll('[data-metric]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        metricKey = btn.dataset.metric;
+        draw();
+      });
+    });
+
     root.querySelectorAll('[data-map-region]').forEach((node) => {
-      const selectNode = () => {
+      const pick = () => {
         activeMapId = node.dataset.mapRegion;
         draw();
       };
-      node.addEventListener('click', selectNode);
+      node.addEventListener('click', pick);
       node.addEventListener('keydown', (ev) => {
         if (ev.key === 'Enter' || ev.key === ' ') {
           ev.preventDefault();
-          selectNode();
+          pick();
         }
+      });
+    });
+
+    root.querySelectorAll('[data-prov-pin]').forEach((pin) => {
+      pin.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        provA = pin.dataset.provPin;
+        const found = PROVINCES_38.find((p) => p.code === provA);
+        if (found) activeMapId = found.region;
+        draw();
       });
     });
 
@@ -216,7 +229,7 @@ export function renderRegions(root) {
 
     root.querySelector('#export-reg-csv')?.addEventListener('click', () => {
       downloadCsv(
-        'indonesia-provinces-2025.csv',
+        'indonesia-38-provinces-2025.csv',
         ['Code', 'Province', 'Macro_Region', 'Population_M', 'GRDP_Per_Capita_USD', 'Real_Growth_Pct', 'Poverty_Pct', 'Unemployment_Pct', 'HDI'],
         visibleProvs.map((p) => [p.code, p.name, p.region, p.popM, p.grdpPerCapitaUsd, p.growth, p.poverty, p.unemployment, p.hdi]),
       );

@@ -1,23 +1,27 @@
-// Overview landing page: national headline KPIs, macro trend chart, sectoral GDP, regional summary, latest releases
+// Editorial overview landing page: compact masthead, 4 KPI strips, dual annotated charts, regional balance & bulletins
 
-import { NATIONAL_KPIS, QUARTERLY_MACRO, SECTOR_GDP_SHARE, MACRO_REGION_SUMMARY, LATEST_RELEASES } from '../data/overview.js';
+import { LATEST_RELEASES, MACRO_REGION_SUMMARY, NATIONAL_KPIS, QUARTERLY_MACRO, SECTOR_GDP_SHARE } from '../data/overview.js';
 import { bindChartTooltips, horizontalBarsSvg, lineChartSvg, sparklineSvg } from '../components/charts.js';
-import { esc, fmtNum, kpiCard, renderTable } from '../components/ui.js';
+import { esc, fmtNum, kpiCard, renderTable, takeawayBox } from '../components/ui.js';
 
 export function renderHome(root) {
   const kpisHtml = NATIONAL_KPIS.map((item) => {
-    const stroke = item.tone === 'signal' ? '#c2410c' : item.tone === 'good' ? '#047857' : '#0f4c81';
+    const stroke = item.tone === 'signal' ? '#9e2a2b' : item.tone === 'good' ? '#0f766e' : '#16425b';
     return kpiCard(item, sparklineSvg(item.spark, stroke));
   }).join('');
 
   const macroChart = lineChartSvg({
     labels: QUARTERLY_MACRO.map((d) => d.period),
     series: [
-      { name: 'Real GDP Growth (YoY)', values: QUARTERLY_MACRO.map((d) => d.gdpGrowth), color: '#0f4c81', area: true },
-      { name: 'CPI Inflation (YoY)', values: QUARTERLY_MACRO.map((d) => d.cpi), color: '#c2410c', area: false },
+      { name: 'Real GDP Growth (YoY)', values: QUARTERLY_MACRO.map((d) => d.gdpGrowth), color: '#16425b', area: true },
+      { name: 'Headline CPI Inflation', values: QUARTERLY_MACRO.map((d) => d.cpi), color: '#9e2a2b', area: false },
     ],
     unit: '%',
-    height: 235,
+    height: 195,
+    annotations: [
+      { index: 3, seriesIdx: 1, label: 'Fuel peak 5.95%', dx: 0, dy: -16 },
+      { index: 11, seriesIdx: 0, label: 'Q4 GDP +5.26%', dx: -26, dy: -20 },
+    ],
   });
 
   const sectorChart = horizontalBarsSvg({
@@ -28,7 +32,7 @@ export function renderHome(root) {
       sub: `+${s.growth}% YoY`,
     })),
     valueSuffix: '%',
-    maxVal: 30,
+    maxVal: 24,
   });
 
   const regionTable = renderTable({
@@ -46,7 +50,7 @@ export function renderHome(root) {
     (rel) => `<li class="release-item">
       <div class="release-top">
         <span>${esc(rel.date)}</span>
-        <span class="kpi-code">${esc(rel.code)}</span>
+        <span class="code-tag">${esc(rel.code)}</span>
       </div>
       <strong><a href="${esc(rel.route)}">${esc(rel.title)}</a></strong>
       <p>${esc(rel.summary)}</p>
@@ -54,103 +58,67 @@ export function renderHome(root) {
   ).join('');
 
   root.innerHTML = `
-    <section class="hero-banner">
+    <section class="editorial-lead">
       <div>
-        <span class="hero-kicker">Republic of Indonesia · FY 2025 Statistical Portrait</span>
-        <h1>Trusted macroeconomic, demographic, and regional indicators in one place.</h1>
-        <p>Explore quarterly national accounts, consumer price baskets, labor force trends, and provincial development across 38 provinces — built for analysts, policymakers, and citizens.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#/economy">Explore Macroeconomy</a>
-          <a class="btn btn-ghost" href="#/regions">Open Provincial Atlas</a>
-          <a class="btn btn-ghost" href="#/explorer">Search &amp; Export CSV</a>
-        </div>
+        <span class="kicker">Republic of Indonesia · FY 2025 / Q1 2026 Statistical Almanac</span>
+        <h1>Indonesia in Numbers: Growth, Prices, Labor &amp; All 38 Provinces</h1>
+        <p>Verified macroeconomic accounts, 90-city consumer prices, demographic structure, and provincial disparities — cited to BPS, Bank Indonesia, and Ministry of Finance.</p>
       </div>
-      <div class="hero-summary-box" aria-label="National Snapshot">
-        <div class="hero-stat">
-          <small>GDP per Capita (2025)</small>
-          <strong>$5,063</strong>
-          <span>IDR 80.7M · SNA 2008</span>
-        </div>
-        <div class="hero-stat">
-          <small>Trade Balance (2025)</small>
-          <strong>+$34.8B</strong>
-          <span>56th straight surplus mo.</span>
-        </div>
-        <div class="hero-stat">
-          <small>Human Dev. Index</small>
-          <strong>75.02</strong>
-          <span>High tier · +0.63 YoY</span>
-        </div>
-        <div class="hero-stat">
-          <small>Clean Power Share</small>
-          <strong>14.9%</strong>
-          <span>Geothermal &amp; hydro mix</span>
-        </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <a class="btn" href="#/regions">38-Province Map</a>
+        <a class="btn btn-outline" href="#/economy">Macro &amp; CPI</a>
+        <a class="btn btn-outline" href="#/explorer">Explore &amp; Export</a>
       </div>
     </section>
 
-    <div class="section-head">
-      <div>
-        <h2>Headline National Indicators</h2>
-        <p>Latest official benchmark readings with 6-year trajectory and source attribution.</p>
-      </div>
-      <a class="btn btn-outline" href="#/explorer">Browse all 28 indicators &rarr;</a>
-    </div>
-    <section class="kpi-grid">${kpisHtml}</section>
+    <section class="kpi-strip">${kpisHtml}</section>
 
-    <div class="section-head" style="margin-top:26px">
-      <div>
-        <h2>Macroeconomic Pulse &amp; Industrial Structure</h2>
-        <p>Quarterly real GDP growth vs. headline CPI inflation and sector shares of output.</p>
-      </div>
-    </div>
-    <section class="grid-2">
+    <section class="grid-2" style="margin-bottom:26px">
       <article class="panel">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">Quarterly GDP Growth &amp; CPI Inflation (2021–2025)</h3>
-            <p class="panel-sub">Year-on-year percentage change (%)</p>
+            <h2 class="panel-title">Quarterly Real GDP Growth vs. CPI Inflation (2021–2025)</h2>
+            <p class="panel-sub">Year-on-year % change · Disinflation restored while output held above 5%</p>
           </div>
-          <span class="citation-tag">SNA &amp; CPI Survey · 2025</span>
+          <span class="code-tag">BPS · SNA &amp; CPI 2025</span>
         </div>
         ${macroChart}
+        ${takeawayBox('Output stayed resilient near 5.1% through 2025 as inflation normalized from 5.95% (Q3 2022) to 2.42% (Q4 2025).')}
       </article>
+
       <article class="panel">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">Nominal GDP Composition by Sector</h3>
-            <p class="panel-sub">Share of national gross value added (%), FY 2025</p>
+            <h2 class="panel-title">Nominal GDP Share by Major Sector (FY 2025)</h2>
+            <p class="panel-sub">Top 6 KBLI / ISIC Rev.4 industries accounting for 74.0% of output</p>
           </div>
-          <span class="citation-tag">KBLI / ISIC Rev.4 · 2025</span>
+          <span class="code-tag">BPS · KBLI SNA 2025</span>
         </div>
         ${sectorChart}
+        ${takeawayBox('Manufacturing remains the largest pillar (19.2%), while ICT & Financial Services (+7.4% YoY) is the fastest-growing major group.')}
       </article>
     </section>
 
-    <div class="section-head">
-      <div>
-        <h2>Regional Balance &amp; Latest Statistical Bulletins</h2>
-        <p>Output and human development across Indonesia's six macro-regions alongside recent publications.</p>
-      </div>
-    </div>
-    <section class="grid-sidebar">
+    <section class="grid-atlas">
       <article class="panel">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">Six Macro-Regions at a Glance</h3>
-            <p class="panel-sub">Share of national GDP, population, real growth, and HDI (2025)</p>
+            <h3 class="panel-title">Six Macro-Regions: Output, Population &amp; HDI (2025)</h3>
+            <p class="panel-sub">Regional economic concentration vs. eastern growth acceleration</p>
           </div>
-          <a class="btn btn-outline" href="#/regions">Interactive Map &rarr;</a>
+          <a class="btn btn-outline" href="#/regions">Open Choropleth Map &rarr;</a>
         </div>
         ${regionTable}
+        ${takeawayBox('Eastern corridors (Sulawesi +6.12%, Maluku-Papua +6.45%) outpace national growth on mineral refining and infrastructure.')}
       </article>
+
       <article class="panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">Latest Statistical Releases</h3>
-            <p class="panel-sub">Official schedule &amp; summary notes</p>
+            <p class="panel-sub">Official 2025–2026 publications</p>
           </div>
-          <a href="#/methodology">Calendar &rarr;</a>
+          <a href="#/methodology">2026 Calendar &rarr;</a>
         </div>
         <ul class="release-list">${releasesHtml}</ul>
       </article>

@@ -1,6 +1,4 @@
-// Client-side hash router with lazy-loaded views for secondary routes
-
-import { renderHome } from './views/home.js';
+// Minimal hash router: lazy-loads every view & dataset via literal import() so first load stays tiny
 
 const appEl = document.getElementById('app');
 const navEl = document.getElementById('primary-nav');
@@ -8,26 +6,20 @@ const toggleBtn = document.getElementById('nav-toggle');
 const searchForm = document.getElementById('quick-search');
 const searchInput = document.getElementById('quick-search-input');
 
-function updateActiveNav(routeName) {
-  document.querySelectorAll('.primary-nav a').forEach((link) => {
-    const active = link.dataset.route === routeName;
-    link.classList.toggle('active', active);
-    if (active) link.setAttribute('aria-current', 'page');
-    else link.removeAttribute('aria-current');
+function setActiveNav(name) {
+  document.querySelectorAll('.primary-nav a').forEach((a) => {
+    const active = a.dataset.route === name;
+    a.classList.toggle('active', active);
+    if (active) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
   });
-}
-
-function closeMobileNav() {
-  if (!navEl || !toggleBtn) return;
-  navEl.classList.remove('open');
-  toggleBtn.setAttribute('aria-expanded', 'false');
 }
 
 if (toggleBtn && navEl) {
   toggleBtn.addEventListener('click', () => {
-    const next = !navEl.classList.contains('open');
-    navEl.classList.toggle('open', next);
-    toggleBtn.setAttribute('aria-expanded', String(next));
+    const open = !navEl.classList.contains('open');
+    navEl.classList.toggle('open', open);
+    toggleBtn.setAttribute('aria-expanded', String(open));
   });
 }
 
@@ -41,51 +33,51 @@ if (searchForm && searchInput) {
 
 async function route() {
   window.__shotReady = false;
-  closeMobileNav();
+  if (navEl && toggleBtn) {
+    navEl.classList.remove('open');
+    toggleBtn.setAttribute('aria-expanded', 'false');
+  }
 
-  const rawHash = location.hash || '#/';
-  const [pathPart, queryPart = ''] = rawHash.slice(1).split('?');
+  const raw = location.hash || '#/';
+  const [pathPart, queryPart = ''] = raw.slice(1).split('?');
   const path = pathPart || '/';
   const params = new URLSearchParams(queryPart);
 
   try {
     if (path === '/' || path === '') {
-      document.title = 'NusaStat · Republic of Indonesia National Statistical Portal';
-      updateActiveNav('home');
+      document.title = 'NusaStat · Indonesia National Statistical Almanac';
+      setActiveNav('home');
+      const { renderHome } = await import('./views/home.js');
       renderHome(appEl);
     } else if (path.startsWith('/economy')) {
       document.title = 'Economy & Prices · NusaStat';
-      updateActiveNav('economy');
-      const mod = await import('./views/economy.js');
-      mod.renderEconomy(appEl, params);
+      setActiveNav('economy');
+      const { renderEconomy } = await import('./views/economy.js');
+      renderEconomy(appEl, params);
     } else if (path.startsWith('/demographics')) {
       document.title = 'Demographics & Labor · NusaStat';
-      updateActiveNav('demographics');
-      const mod = await import('./views/demographics.js');
-      mod.renderDemographics(appEl, params);
+      setActiveNav('demographics');
+      const { renderDemographics } = await import('./views/demographics.js');
+      renderDemographics(appEl, params);
     } else if (path.startsWith('/regions')) {
-      document.title = 'Regional Atlas & Provinces · NusaStat';
-      updateActiveNav('regions');
-      const mod = await import('./views/regions.js');
-      mod.renderRegions(appEl, path, params);
+      document.title = '38-Province Regional Atlas · NusaStat';
+      setActiveNav('regions');
+      const { renderRegions } = await import('./views/regions.js');
+      renderRegions(appEl, params);
     } else if (path.startsWith('/explorer')) {
       document.title = 'Indicator Explorer · NusaStat';
-      updateActiveNav('explorer');
-      const mod = await import('./views/explorer.js');
-      mod.renderExplorer(appEl, params);
+      setActiveNav('explorer');
+      const { renderExplorer } = await import('./views/explorer.js');
+      renderExplorer(appEl, params);
     } else if (path.startsWith('/methodology')) {
       document.title = 'Methodology & Release Calendar · NusaStat';
-      updateActiveNav('methodology');
-      const mod = await import('./views/methodology.js');
-      mod.renderMethodology(appEl);
+      setActiveNav('methodology');
+      const { renderMethodology } = await import('./views/methodology.js');
+      renderMethodology(appEl);
     } else {
       document.title = 'Not Found · NusaStat';
-      updateActiveNav('');
-      appEl.innerHTML = `<section class="panel">
-        <h1>Page not found</h1>
-        <p>No statistical view matches <code>${path.replace(/[&<>]/g, '')}</code>.</p>
-        <a class="btn btn-outline" href="#/">Return to Overview</a>
-      </section>`;
+      setActiveNav('');
+      appEl.innerHTML = `<section class="panel"><h1>Route not found</h1><p>Return to the <a href="#/">National Overview</a>.</p></section>`;
     }
   } finally {
     window.scrollTo(0, 0);
