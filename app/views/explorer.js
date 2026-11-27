@@ -1,12 +1,14 @@
-// Indicator Explorer: live search, domain filter, column sort, 2-indicator comparison mode, and CSV/JSON export
+// Indicator Explorer: live search, domain filter, column sort, 2-indicator comparison, 2026 release links, CSV/JSON
 
 import { INDICATOR_CATALOG } from '../data/indicators.js';
-import { bindChartTooltips, lineChartSvg } from '../components/charts.js';
-import { downloadCsv, downloadJson, esc, renderTable, takeawayBox } from '../components/ui.js';
+import { lineChartSvg } from '../components/line-chart.js';
+import { bindChartTooltips } from '../components/tooltip.js';
+import { downloadCsv, downloadJson } from '../components/export.js';
+import { esc, renderTable, takeawayBox } from '../components/ui.js';
 
 const DOMAINS = ['All', 'Economy', 'Prices', 'Demographics', 'Labor', 'Social', 'Environment'];
 
-export function renderExplorer(root, params) {
+export function renderExplorer(root, { lang, t, params }) {
   let query = params.get('q') || '';
   let domain = params.get('domain') || 'All';
   let activeCode = INDICATOR_CATALOG[0].code;
@@ -16,6 +18,7 @@ export function renderExplorer(root, params) {
   let sortDir = 'asc';
 
   function draw() {
+    document.title = lang === 'id' ? 'Penjelajah Indikator · NusaStat' : 'Indicator Explorer · NusaStat';
     const qLower = query.trim().toLowerCase();
     const filtered = INDICATOR_CATALOG.filter((item) => {
       const domainOk = domain === 'All' || item.domain === domain;
@@ -65,7 +68,7 @@ export function renderExplorer(root, params) {
         { key: 'domain', label: 'Domain', sortable: true },
         {
           key: 'name',
-          label: 'Indicator',
+          label: lang === 'id' ? 'Indikator' : 'Indicator',
           sortable: true,
           render: (v, row) =>
             `<button type="button" class="sort-btn" data-pick="${esc(row.code)}" style="color:#16425b;font-weight:700">${esc(v)}</button>`,
@@ -80,23 +83,24 @@ export function renderExplorer(root, params) {
     root.innerHTML = `
       <div class="editorial-lead">
         <div>
-          <span class="kicker">Open Statistical Catalog · 28 National Series</span>
-          <h1>Indicator Explorer &amp; Two-Series Comparator</h1>
-          <p>Search across domains, sort series metadata, compare any two indicators over 2020–2025, and export filtered CSV or JSON.</p>
+          <span class="kicker">${esc(t.expKicker)}</span>
+          <h1>${esc(t.expTitle)}</h1>
+          <p>${esc(t.expSub)}</p>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn btn-outline" id="dl-exp-csv">Export Filtered CSV</button>
-          <button type="button" class="btn btn-outline" id="dl-exp-json">Export JSON</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <a class="btn btn-outline" href="#/methodology">${esc(t.calendarLink)}</a>
+          <button type="button" class="btn btn-outline" id="dl-exp-csv">CSV</button>
+          <button type="button" class="btn btn-outline" id="dl-exp-json">JSON</button>
         </div>
       </div>
 
-      <article class="panel" style="margin-bottom:12px">
-        <div class="controls-bar" style="margin-bottom:8px">
+      <article class="panel" style="margin-bottom:9px">
+        <div class="controls-bar" style="margin-bottom:6px">
           <input class="control-input" id="exp-search" type="search" value="${esc(query)}" placeholder="Search keyword, code (ECO-01), or source..." style="min-width:220px;flex:1">
           <div class="pill-group">${domainPills}</div>
         </div>
         <div class="controls-bar" style="margin-bottom:0">
-          <label style="font-size:0.8rem;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+          <label style="font-size:.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px">
             <input type="checkbox" id="toggle-compare" ${compareOn ? 'checked' : ''}> Compare with:
           </label>
           <select class="control-select" id="compare-select" aria-label="Secondary indicator" ${compareOn ? '' : 'disabled'} style="max-width:420px;flex:1">
@@ -105,12 +109,12 @@ export function renderExplorer(root, params) {
         </div>
       </article>
 
-      <article class="panel" style="margin-bottom:12px">
+      <article class="panel" style="margin-bottom:9px">
         <div class="panel-head">
           <div>
             <span class="code-tag">${esc(primary.code)} · ${esc(primary.domain)}</span>
-            <h2 class="panel-title" style="margin-top:5px">${esc(primary.name)}</h2>
-            <p class="panel-sub">Latest: <strong>${primary.latest} ${esc(primary.unit)}</strong> (${esc(primary.year)}) · 2020–2025 net change: ${Number(deltaPrimary) >= 0 ? '+' : ''}${deltaPrimary} ${esc(primary.unit)}</p>
+            <h2 class="panel-title" style="margin-top:4px">${esc(primary.name)}</h2>
+            <p class="panel-sub">Latest: <strong>${primary.latest} ${esc(primary.unit)}</strong> (${esc(primary.year)}) · 2020–2025 change: ${Number(deltaPrimary) >= 0 ? '+' : ''}${deltaPrimary} ${esc(primary.unit)}</p>
           </div>
           <span class="code-tag">${esc(primary.source)} · ${esc(primary.year)}</span>
         </div>
@@ -118,16 +122,16 @@ export function renderExplorer(root, params) {
           labels: primary.years,
           series: seriesList,
           unit: primary.unit === '%' && (!compareOn || secondary.unit === '%') ? '%' : '',
-          height: 205,
+          height: 185,
         })}
-        ${takeawayBox(`Primary series ${primary.code} (${primary.source}, ${primary.year}) ${compareOn && secondary ? `plotted alongside ${secondary.code} (${secondary.name}: ${secondary.latest} ${secondary.unit})` : 'over 2020–2025'}.`)}
+        ${takeawayBox(`Primary ${primary.code} (${primary.source}, ${primary.year})${compareOn && secondary ? ` compared with ${secondary.code} (${secondary.name}: ${secondary.latest} ${secondary.unit})` : ''}.`, t.keyTakeaway)}
       </article>
 
       <article class="panel">
         <div class="panel-head">
           <div>
             <h3 class="panel-title">Matching Series (${filtered.length} of ${INDICATOR_CATALOG.length})</h3>
-            <p class="panel-sub">Click any indicator title to load it as the primary series, or click headers to sort.</p>
+            <p class="panel-sub">Click any indicator title to load it above, or click column headers to sort.</p>
           </div>
         </div>
         ${tableHtml}

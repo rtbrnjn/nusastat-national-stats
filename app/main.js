@@ -1,84 +1,37 @@
-// Minimal hash router: lazy-loads every view & dataset via literal import() so first load stays tiny
+// Minimal hash router with awaited secondary CSS and literal dynamic import() per route
+const app = document.getElementById('app');
+const ROUTES = {
+  economy: [() => import('./views/economy.js'), 'renderEconomy'],
+  demographics: [() => import('./views/demographics.js'), 'renderDemographics'],
+  regions: [() => import('./views/regions.js'), 'renderRegions'],
+  explorer: [() => import('./views/explorer.js'), 'renderExplorer'],
+  methodology: [() => import('./views/methodology.js'), 'renderMethodology'],
+};
+let lang = 'en', wired = false, extraCss;
 
-const appEl = document.getElementById('app');
-const navEl = document.getElementById('primary-nav');
-const toggleBtn = document.getElementById('nav-toggle');
-const searchForm = document.getElementById('quick-search');
-const searchInput = document.getElementById('quick-search-input');
-
-function setActiveNav(name) {
-  document.querySelectorAll('.primary-nav a').forEach((a) => {
-    const active = a.dataset.route === name;
-    a.classList.toggle('active', active);
-    if (active) a.setAttribute('aria-current', 'page');
-    else a.removeAttribute('aria-current');
-  });
-}
-
-if (toggleBtn && navEl) {
-  toggleBtn.addEventListener('click', () => {
-    const open = !navEl.classList.contains('open');
-    navEl.classList.toggle('open', open);
-    toggleBtn.setAttribute('aria-expanded', String(open));
-  });
-}
-
-if (searchForm && searchInput) {
-  searchForm.addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    const q = searchInput.value.trim();
-    location.hash = q ? `#/explorer?q=${encodeURIComponent(q)}` : '#/explorer';
-  });
-}
+const loadCss = () => (extraCss ??= new Promise((r) => {
+  const l = document.createElement('link');
+  l.rel = 'stylesheet'; l.href = 'styles-extra.css'; l.onload = l.onerror = r;
+  document.head.appendChild(l);
+}));
 
 async function route() {
   window.__shotReady = false;
-  if (navEl && toggleBtn) {
-    navEl.classList.remove('open');
-    toggleBtn.setAttribute('aria-expanded', 'false');
-  }
-
-  const raw = location.hash || '#/';
-  const [pathPart, queryPart = ''] = raw.slice(1).split('?');
-  const path = pathPart || '/';
-  const params = new URLSearchParams(queryPart);
+  const [pPart, qPart = ''] = (location.hash || '#/').slice(1).split('?');
+  const seg = (pPart.replace(/^\/+/, '').split('/')[0] || 'home');
+  const params = new URLSearchParams(qPart);
+  if (params.get('lang') === 'id') lang = 'id'; else if (params.get('lang') === 'en') lang = 'en';
 
   try {
-    if (path === '/' || path === '') {
-      document.title = 'NusaStat · Indonesia National Statistical Almanac';
-      setActiveNav('home');
-      const { renderHome } = await import('./views/home.js');
-      renderHome(appEl);
-    } else if (path.startsWith('/economy')) {
-      document.title = 'Economy & Prices · NusaStat';
-      setActiveNav('economy');
-      const { renderEconomy } = await import('./views/economy.js');
-      renderEconomy(appEl, params);
-    } else if (path.startsWith('/demographics')) {
-      document.title = 'Demographics & Labor · NusaStat';
-      setActiveNav('demographics');
-      const { renderDemographics } = await import('./views/demographics.js');
-      renderDemographics(appEl, params);
-    } else if (path.startsWith('/regions')) {
-      document.title = '38-Province Regional Atlas · NusaStat';
-      setActiveNav('regions');
-      const { renderRegions } = await import('./views/regions.js');
-      renderRegions(appEl, params);
-    } else if (path.startsWith('/explorer')) {
-      document.title = 'Indicator Explorer · NusaStat';
-      setActiveNav('explorer');
-      const { renderExplorer } = await import('./views/explorer.js');
-      renderExplorer(appEl, params);
-    } else if (path.startsWith('/methodology')) {
-      document.title = 'Methodology & Release Calendar · NusaStat';
-      setActiveNav('methodology');
-      const { renderMethodology } = await import('./views/methodology.js');
-      renderMethodology(appEl);
-    } else {
-      document.title = 'Not Found · NusaStat';
-      setActiveNav('');
-      appEl.innerHTML = `<section class="panel"><h1>Route not found</h1><p>Return to the <a href="#/">National Overview</a>.</p></section>`;
-    }
+    const [, i18n] = await Promise.all([loadCss(), import('./data/i18n.js')]);
+    if (!wired) { wired = true; i18n.wireChromeControls({ getLang: () => lang, toggleLang: () => { lang = lang === 'en' ? 'id' : 'en'; route(); } }); }
+    i18n.closeMobileNav();
+    i18n.applyChromeLabels(lang);
+    document.querySelectorAll('.primary-nav a').forEach((a) => a.classList.toggle('active', a.dataset.route === seg));
+    const ctx = { lang, t: i18n.getStrings(lang), params };
+    if (seg === 'home') (await import('./views/home.js')).renderHome(app, ctx);
+    else if (ROUTES[seg]) (await ROUTES[seg][0]())[ROUTES[seg][1]](app, ctx);
+    else app.innerHTML = '<section class="panel"><h1>404</h1><p><a href="#/">Overview</a></p></section>';
   } finally {
     window.scrollTo(0, 0);
     window.__shotReady = true;

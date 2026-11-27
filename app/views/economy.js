@@ -1,35 +1,41 @@
-// Economy & Prices view: interactive series switcher, annotated trend chart, CPI basket, trade partners, sortable table & CSV
+// Economy & Prices view: 4 symmetric KPIs, annotated chart + Personal CPI & UMP Calculator, COICOP & Trade bars, table
 
 import { CPI_BASKET_2025, ECONOMY_SERIES, MACRO_ANNUAL_TABLE, TRADE_PARTNERS_2025 } from '../data/economy.js';
-import { bindChartTooltips, horizontalBarsSvg, lineChartSvg } from '../components/charts.js';
-import { downloadCsv, esc, fmtNum, kpiCard, renderTable, takeawayBox } from '../components/ui.js';
+import { lineChartSvg } from '../components/line-chart.js';
+import { horizontalBarsSvg } from '../components/bar-chart.js';
+import { bindChartTooltips } from '../components/tooltip.js';
+import { bindCpiCalculator, createCpiCalculatorState, renderCpiCalculator } from '../components/cpi-calculator.js';
+import { downloadCsv } from '../components/export.js';
+import { esc, fmtNum, kpiCard, renderTable, takeawayBox } from '../components/ui.js';
 
 const ANNOTATIONS = {
   gdp: [
-    { index: 1, seriesIdx: 2, label: '2020 trough -4.96%', dx: 24, dy: -16 },
-    { index: 6, seriesIdx: 0, label: '2025 GDP +5.11%', dx: -24, dy: -18 },
+    { index: 1, seriesIdx: 2, label: '2020 trough -4.96%', dx: 24, dy: -15 },
+    { index: 6, seriesIdx: 0, label: '2025 GDP +5.11%', dx: -24, dy: -16 },
   ],
   prices: [
-    { index: 3, seriesIdx: 0, label: '2022 peak 5.51%', dx: 0, dy: -16 },
-    { index: 6, seriesIdx: 0, label: '2025 CPI 2.42%', dx: -24, dy: -16 },
+    { index: 3, seriesIdx: 0, label: '2022 peak 5.51%', dx: 0, dy: -15 },
+    { index: 6, seriesIdx: 0, label: '2025 CPI 2.42%', dx: -24, dy: -15 },
   ],
   trade: [
     { index: 3, seriesIdx: 0, label: '2022 high $291.9B', dx: 0, dy: -14 },
-    { index: 6, seriesIdx: 2, label: 'Surplus +$34.8B', dx: -28, dy: -16 },
+    { index: 6, seriesIdx: 2, label: 'Surplus +$34.8B', dx: -26, dy: -15 },
   ],
   fiscal: [
-    { index: 1, seriesIdx: 0, label: 'COVID stimulus 16.8%', dx: 20, dy: -14 },
-    { index: 6, seriesIdx: 1, label: 'Deficit 2.30%', dx: -22, dy: 18 },
+    { index: 1, seriesIdx: 0, label: 'Stimulus 16.8%', dx: 20, dy: -14 },
+    { index: 6, seriesIdx: 1, label: 'Deficit 2.30%', dx: -22, dy: 16 },
   ],
 };
 
-export function renderEconomy(root) {
+export function renderEconomy(root, { lang, t }) {
   let activeKey = 'gdp';
   let span = 'all';
   let sortKey = 'year';
   let sortDir = 'desc';
+  const calcState = createCpiCalculatorState();
 
   function draw() {
+    document.title = lang === 'id' ? 'Ekonomi & IHK · NusaStat' : 'Economy & Prices · NusaStat';
     const ds = ECONOMY_SERIES[activeKey];
     const sliceCount = span === '3y' ? 3 : span === '5y' ? 5 : ds.years.length;
     const startIdx = Math.max(0, ds.years.length - sliceCount);
@@ -39,39 +45,15 @@ export function renderEconomy(root) {
       .filter((a) => a.index >= startIdx)
       .map((a) => ({ ...a, index: a.index - startIdx }));
 
-    const sortedRows = [...MACRO_ANNUAL_TABLE].sort((a, b) => {
-      const diff = a[sortKey] - b[sortKey];
-      return sortDir === 'asc' ? diff : -diff;
-    });
+    const sortedRows = [...MACRO_ANNUAL_TABLE].sort((a, b) =>
+      sortDir === 'asc' ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey],
+    );
 
     const econKpis = [
-      kpiCard({
-        code: 'SNA-2025',
-        label: 'Nominal GDP (FY 2025)',
-        value: '$1.44T',
-        delta: '+5.11% real',
-        tone: 'good',
-        source: 'BPS · National Accounts',
-        year: '2025',
-      }),
-      kpiCard({
-        code: 'BI-RATE',
-        label: 'BI-Rate Policy Benchmark',
-        value: '5.50%',
-        delta: '-50 bps vs 2024',
-        tone: 'neutral',
-        source: 'Bank Indonesia',
-        year: 'Dec 2025',
-      }),
-      kpiCard({
-        code: 'APBN-2025',
-        label: 'Fiscal Deficit / GDP',
-        value: '2.30%',
-        delta: 'Below 3.0% ceiling',
-        tone: 'good',
-        source: 'Ministry of Finance',
-        year: 'FY 2025',
-      }),
+      kpiCard({ code: 'SNA-2025', label: lang === 'id' ? 'PDB Nominal' : 'Nominal GDP', value: '$1.44T', delta: '+5.11% real', tone: 'good', source: 'BPS · SNA', year: '2025' }),
+      kpiCard({ code: 'BI-RATE', label: 'BI-Rate Benchmark', value: '5.50%', delta: '-50 bps YoY', tone: 'neutral', source: 'Bank Indonesia', year: 'Dec 2025' }),
+      kpiCard({ code: 'APBN-25', label: lang === 'id' ? 'Defisit Fiskal' : 'Fiscal Deficit', value: '2.30%', delta: '< 3.0% cap', tone: 'good', source: 'MoF APBN', year: 'FY 2025' }),
+      kpiCard({ code: 'TRD-25', label: lang === 'id' ? 'Neraca Dagang' : 'Trade Balance', value: '+$34.8B', delta: '56-mo surplus', tone: 'good', source: 'BPS · Customs', year: 'FY 2025' }),
     ].join('');
 
     const tableHtml = renderTable({
@@ -94,41 +76,45 @@ export function renderEconomy(root) {
     root.innerHTML = `
       <div class="editorial-lead">
         <div>
-          <span class="kicker">Macroeconomy, Prices &amp; External Accounts · 2019–2025</span>
-          <h1>National Accounts, CPI Basket &amp; Merchandise Trade</h1>
-          <p>Constant-price expenditure growth, 90-city COICOP consumer inflation, external surplus, and APBN fiscal ratios.</p>
+          <span class="kicker">${esc(t.econKicker)}</span>
+          <h1>${esc(t.econTitle)}</h1>
+          <p>${esc(t.econSub)}</p>
         </div>
-        <button class="btn btn-outline" id="export-econ-csv" type="button">Download CSV (2019–2025)</button>
+        <button class="btn btn-outline" id="export-econ-csv" type="button">${esc(t.downloadCsv)} (2019–2025)</button>
       </div>
 
-      <section class="kpi-grid-3">${econKpis}</section>
+      <section class="kpi-strip">${econKpis}</section>
 
-      <article class="panel" style="margin-bottom:12px">
-        <div class="panel-head">
-          <div>
-            <h2 class="panel-title">${esc(ds.title)}</h2>
-            <p class="panel-sub">${esc(ds.subtitle)}</p>
+      <section class="grid-atlas">
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">${esc(ds.title)}</h2>
+              <p class="panel-sub">${esc(ds.subtitle)}</p>
+            </div>
+            <span class="code-tag">${esc(ds.source)}</span>
           </div>
-          <span class="code-tag">${esc(ds.source)}</span>
-        </div>
 
-        <div class="controls-bar">
-          <div class="pill-group" role="tablist" aria-label="Economic indicator view">
-            <button type="button" class="pill-btn ${activeKey === 'gdp' ? 'active' : ''}" data-econ="gdp">GDP &amp; Demand</button>
-            <button type="button" class="pill-btn ${activeKey === 'prices' ? 'active' : ''}" data-econ="prices">CPI Inflation</button>
-            <button type="button" class="pill-btn ${activeKey === 'trade' ? 'active' : ''}" data-econ="trade">Merchandise Trade</button>
-            <button type="button" class="pill-btn ${activeKey === 'fiscal' ? 'active' : ''}" data-econ="fiscal">Fiscal Accounts</button>
+          <div class="controls-bar">
+            <div class="pill-group" role="tablist" aria-label="Economic indicator view">
+              <button type="button" class="pill-btn ${activeKey === 'gdp' ? 'active' : ''}" data-econ="gdp">GDP &amp; Demand</button>
+              <button type="button" class="pill-btn ${activeKey === 'prices' ? 'active' : ''}" data-econ="prices">CPI Inflation</button>
+              <button type="button" class="pill-btn ${activeKey === 'trade' ? 'active' : ''}" data-econ="trade">Trade</button>
+              <button type="button" class="pill-btn ${activeKey === 'fiscal' ? 'active' : ''}" data-econ="fiscal">Fiscal</button>
+            </div>
+            <div class="pill-group" aria-label="Timeframe window">
+              <button type="button" class="pill-btn ${span === '3y' ? 'active' : ''}" data-span="3y">3Y</button>
+              <button type="button" class="pill-btn ${span === '5y' ? 'active' : ''}" data-span="5y">5Y</button>
+              <button type="button" class="pill-btn ${span === 'all' ? 'active' : ''}" data-span="all">2019–2025</button>
+            </div>
           </div>
-          <div class="pill-group" aria-label="Timeframe window">
-            <button type="button" class="pill-btn ${span === '3y' ? 'active' : ''}" data-span="3y">3Y</button>
-            <button type="button" class="pill-btn ${span === '5y' ? 'active' : ''}" data-span="5y">5Y</button>
-            <button type="button" class="pill-btn ${span === 'all' ? 'active' : ''}" data-span="all">2019–2025</button>
-          </div>
-        </div>
 
-        ${lineChartSvg({ labels: years, series, unit: ds.unit, height: 150, annotations: chartNotes })}
-        ${takeawayBox('Domestic consumption (+4.94%) and fixed capital formation (+4.72%) anchored 2025 expansion while fiscal deficit remained well below the 3.0% statutory cap.')}
-      </article>
+          ${lineChartSvg({ labels: years, series, unit: ds.unit, height: 185, annotations: chartNotes })}
+          ${takeawayBox('Household consumption (+4.94%) and fixed capital (+4.72%) anchored 2025 growth while the trade surplus held +$34.8B.', t.keyTakeaway)}
+        </article>
+
+        ${renderCpiCalculator(calcState, lang)}
+      </section>
 
       <section class="grid-2">
         <article class="panel">
@@ -158,7 +144,7 @@ export function renderEconomy(root) {
         <div class="panel-head">
           <div>
             <h3 class="panel-title">Annual Macroeconomic Time Series (2019–2025)</h3>
-            <p class="panel-sub">Click any column header to sort · Sources: BPS National Accounts, Bank Indonesia, Ministry of Finance</p>
+            <p class="panel-sub">Click headers to sort · Sources: BPS National Accounts, Bank Indonesia &amp; MoF</p>
           </div>
         </div>
         ${tableHtml}
@@ -166,6 +152,7 @@ export function renderEconomy(root) {
     `;
 
     bindChartTooltips(root);
+    bindCpiCalculator(root, calcState, draw);
 
     root.querySelectorAll('[data-econ]').forEach((btn) => {
       btn.addEventListener('click', () => {

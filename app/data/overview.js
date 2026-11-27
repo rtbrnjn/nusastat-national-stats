@@ -1,10 +1,10 @@
-// National overview dataset (BPS-Statistics Indonesia, Bank Indonesia, Ministry of Finance 2025/2026)
+// Headline national KPIs, quarterly macro series, sectoral GDP shares, and macro-region summary (BPS & BI 2025)
 
 export const NATIONAL_KPIS = [
   {
     id: 'population',
     code: 'DEM-01',
-    label: 'Resident Population',
+    label: { en: 'Resident Population', id: 'Jumlah Penduduk' },
     value: '284.4M',
     delta: '+1.08% YoY',
     tone: 'neutral',
@@ -16,7 +16,7 @@ export const NATIONAL_KPIS = [
   {
     id: 'gdp-growth',
     code: 'ECO-01',
-    label: 'Real GDP Growth',
+    label: { en: 'Real GDP Growth', id: 'Pertumbuhan PDB Riil' },
     value: '5.11%',
     delta: '$1.44T nominal',
     tone: 'good',
@@ -28,7 +28,7 @@ export const NATIONAL_KPIS = [
   {
     id: 'cpi',
     code: 'PRC-01',
-    label: 'Headline CPI Inflation',
+    label: { en: 'Headline CPI Inflation', id: 'Inflasi IHK Umum' },
     value: '2.42%',
     delta: 'Target 2.5±1%',
     tone: 'good',
@@ -40,7 +40,7 @@ export const NATIONAL_KPIS = [
   {
     id: 'unemployment',
     code: 'LAB-01',
-    label: 'Unemployment Rate',
+    label: { en: 'Unemployment Rate', id: 'Tingkat Pengangguran' },
     value: '4.74%',
     delta: 'Poverty 8.57%',
     tone: 'signal',
@@ -67,12 +67,12 @@ export const QUARTERLY_MACRO = [
 ];
 
 export const SECTOR_GDP_SHARE = [
-  { label: 'Manufacturing (KBLI C)', share: 19.2, growth: 4.8, color: '#16425b' },
-  { label: 'Wholesale & Retail Trade', share: 13.1, growth: 4.9, color: '#2a6284' },
-  { label: 'Agriculture & Fisheries', share: 12.6, growth: 3.1, color: '#0f766e' },
-  { label: 'Construction', share: 10.1, growth: 6.2, color: '#b45309' },
-  { label: 'Mining & Quarrying', share: 9.8, growth: 4.5, color: '#9e2a2b' },
-  { label: 'ICT & Financial Services', share: 9.2, growth: 7.4, color: '#475569' },
+  { label: 'Manufacturing (KBLI C)', labelId: 'Industri Pengolahan (C)', share: 19.2, growth: 4.8, color: '#16425b' },
+  { label: 'Wholesale & Retail Trade', labelId: 'Perdagangan Besar/Eceran', share: 13.1, growth: 4.9, color: '#2a6284' },
+  { label: 'Agriculture & Fisheries', labelId: 'Pertanian & Perikanan', share: 12.6, growth: 3.1, color: '#0f766e' },
+  { label: 'Construction', labelId: 'Konstruksi', share: 10.1, growth: 6.2, color: '#b45309' },
+  { label: 'Mining & Quarrying', labelId: 'Pertambangan & Penggalian', share: 9.8, growth: 4.5, color: '#9e2a2b' },
+  { label: 'ICT & Financial Services', labelId: 'Jasa TIK & Keuangan', share: 9.2, growth: 7.4, color: '#475569' },
 ];
 
 export const MACRO_REGION_SUMMARY = [
@@ -82,35 +82,4 @@ export const MACRO_REGION_SUMMARY = [
   { id: 'sulawesi', name: 'Sulawesi', shareGdp: 7.1, popMillions: 20.9, growth: 6.12, hdi: 72.8 },
   { id: 'bali-nt', name: 'Bali & Nusa Tenggara', shareGdp: 2.8, popMillions: 15.8, growth: 5.25, hdi: 71.9 },
   { id: 'maluku-papua', name: 'Maluku & Papua', shareGdp: 2.6, popMillions: 9.5, growth: 6.45, hdi: 66.8 },
-];
-
-export const LATEST_RELEASES = [
-  {
-    date: '05 Feb 2026',
-    code: 'BPS-SNA-014',
-    title: 'Q4 & Full-Year 2025 National Accounts',
-    summary: 'Real GDP grew 5.11% in FY 2025 ($1.44T nominal), driven by household consumption (+4.94%) and investment (+4.72%).',
-    route: '#/economy',
-  },
-  {
-    date: '02 Feb 2026',
-    code: 'BPS-CPI-011',
-    title: '90-City Consumer Price Index (Dec 2025)',
-    summary: 'Headline inflation finished 2025 at 2.42% YoY with core inflation steady at 2.26%, comfortably inside Bank Indonesia’s target.',
-    route: '#/economy',
-  },
-  {
-    date: '15 Jan 2026',
-    code: 'BPS-SUS-005',
-    title: 'SUSENAS Poverty & Inequality Profile',
-    summary: 'Poverty declined to 8.57% (24.06M residents) as real rural wages improved; Gini expenditure ratio fell to 0.379.',
-    route: '#/regions',
-  },
-  {
-    date: '05 Nov 2025',
-    code: 'BPS-SAK-118',
-    title: 'SAKERNAS Labor Force Survey',
-    summary: 'Workforce reached 144.6M employed (70.6% participation) while open unemployment eased to 4.74%.',
-    route: '#/demographics',
-  },
 ];
