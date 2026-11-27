@@ -1,6 +1,6 @@
 // Choropleth SVG map renderer for the Indonesian archipelago (6 macro-regions + 38 provincial pins)
 
-import { ARCHIPELAGO_PATHS, REGION_LABELS } from '../data/archipelago-paths.js';
+import { ARCHIPELAGO_PATHS, INTERNAL_BORDERS, REGION_LABELS } from '../data/archipelago-paths.js';
 import { esc } from './ui.js';
 
 const PALETTE = ['#d9e4ec', '#9cb8cc', '#5b8aa8', '#2a6284', '#16425b'];
@@ -64,6 +64,7 @@ export function renderArchipelagoMap({
       <text x="12" y="86" font-size="7.8" fill="#64748b">0° Equator</text>
       <text x="12" y="238" font-size="8" fill="#4b5563">Click an island region or any of the 38 provincial pins · BPS Regional Accounts 2025</text>
       ${islandsSvg}
+      <path d="${INTERNAL_BORDERS}" fill="none" stroke="rgba(255,255,255,0.48)" stroke-width="0.75" stroke-dasharray="2.5 2" pointer-events="none" />
       ${pinsSvg}
       ${labelsSvg}
     </svg>
