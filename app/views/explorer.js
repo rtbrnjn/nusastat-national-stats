@@ -1,4 +1,4 @@
-// Indicator Explorer: live search, domain filter, column sort, 2-indicator comparison, 2026 release links, CSV/JSON
+// Indicator Explorer: live EN/ID search, domain filter, sort, 2-indicator comparison, CSV/JSON export
 
 import { INDICATOR_CATALOG } from '../data/indicators.js';
 import { lineChartSvg } from '../components/line-chart.js';
@@ -6,7 +6,16 @@ import { bindChartTooltips } from '../components/tooltip.js';
 import { downloadCsv, downloadJson } from '../components/export.js';
 import { esc, renderTable, takeawayBox } from '../components/ui.js';
 
-const DOMAINS = ['All', 'Economy', 'Prices', 'Demographics', 'Labor', 'Social', 'Environment'];
+const DOMAINS = [
+  { key: 'All', en: 'All', id: 'Semua' },
+  { key: 'Economy', en: 'Economy', id: 'Ekonomi' },
+  { key: 'Prices', en: 'Prices', id: 'Harga' },
+  { key: 'Demographics', en: 'Demographics', id: 'Demografi' },
+  { key: 'Labor', en: 'Labor', id: 'Tenaga Kerja' },
+  { key: 'Social', en: 'Social', id: 'Sosial' },
+  { key: 'Regional', en: 'Regional', id: 'Regional' },
+  { key: 'Environment', en: 'Environment', id: 'Lingkungan' },
+];
 
 export function renderExplorer(root, { lang, t, params }) {
   let query = params.get('q') || '';
@@ -18,7 +27,8 @@ export function renderExplorer(root, { lang, t, params }) {
   let sortDir = 'asc';
 
   function draw() {
-    document.title = lang === 'id' ? 'Penjelajah Indikator · NusaStat' : 'Indicator Explorer · NusaStat';
+    const isId = lang === 'id';
+    document.title = isId ? 'Penjelajah Indikator · NusaStat' : 'Indicator Explorer · NusaStat';
     const qLower = query.trim().toLowerCase();
     const filtered = INDICATOR_CATALOG.filter((item) => {
       const domainOk = domain === 'All' || item.domain === domain;
@@ -26,8 +36,10 @@ export function renderExplorer(root, { lang, t, params }) {
       if (!qLower) return true;
       return (
         item.name.toLowerCase().includes(qLower) ||
+        (item.nameId || '').toLowerCase().includes(qLower) ||
         item.code.toLowerCase().includes(qLower) ||
         item.domain.toLowerCase().includes(qLower) ||
+        (item.domainId || '').toLowerCase().includes(qLower) ||
         item.source.toLowerCase().includes(qLower)
       );
     }).sort((a, b) => {
@@ -44,18 +56,19 @@ export function renderExplorer(root, { lang, t, params }) {
     const secondary = INDICATOR_CATALOG.find((i) => i.code === compareCode) || INDICATOR_CATALOG[10];
 
     const domainPills = DOMAINS.map(
-      (d) => `<button type="button" class="pill-btn ${domain === d ? 'active' : ''}" data-domain="${esc(d)}">${esc(d)}</button>`,
+      (d) => `<button type="button" class="pill-btn ${domain === d.key ? 'active' : ''}" data-domain="${esc(d.key)}">${esc(isId ? d.id : d.en)}</button>`,
     ).join('');
 
-    const seriesList = [
-      { name: `${primary.name} (${primary.unit})`, values: primary.values, color: '#16425b', area: true },
-    ];
+    const pName = isId ? primary.nameId : primary.name;
+    const sName = secondary ? (isId ? secondary.nameId : secondary.name) : '';
+
+    const seriesList = [{ name: `${pName} (${primary.unit})`, values: primary.values, color: '#16425b', area: true }];
     if (compareOn && secondary && secondary.code !== primary.code) {
-      seriesList.push({ name: `${secondary.name} (${secondary.unit})`, values: secondary.values, color: '#9e2a2b', area: false });
+      seriesList.push({ name: `${sName} (${secondary.unit})`, values: secondary.values, color: '#9e2a2b', area: false });
     }
 
     const compareOptions = INDICATOR_CATALOG.map(
-      (i) => `<option value="${esc(i.code)}" ${i.code === compareCode ? 'selected' : ''}>${esc(i.code)} · ${esc(i.name)} (${esc(i.unit)})</option>`,
+      (i) => `<option value="${esc(i.code)}" ${i.code === compareCode ? 'selected' : ''}>${esc(i.code)} · ${esc(isId ? i.nameId : i.name)} (${esc(i.unit)})</option>`,
     ).join('');
 
     const deltaPrimary = (primary.values[primary.values.length - 1] - primary.values[0]).toFixed(2);
@@ -64,21 +77,25 @@ export function renderExplorer(root, { lang, t, params }) {
       sortKey,
       sortDir,
       columns: [
-        { key: 'code', label: 'Code', sortable: true, render: (v) => `<span class="code-tag">${esc(v)}</span>` },
-        { key: 'domain', label: 'Domain', sortable: true },
+        { key: 'code', label: isId ? 'Kode' : 'Code', sortable: true, render: (v) => `<span class="code-tag">${esc(v)}</span>` },
+        { key: 'domain', label: 'Domain', sortable: true, render: (v, r) => esc(isId ? r.domainId : v) },
         {
           key: 'name',
-          label: lang === 'id' ? 'Indikator' : 'Indicator',
+          label: isId ? 'Indikator' : 'Indicator',
           sortable: true,
           render: (v, row) =>
-            `<button type="button" class="sort-btn" data-pick="${esc(row.code)}" style="color:#16425b;font-weight:700">${esc(v)}</button>`,
+            `<button type="button" class="sort-btn" data-pick="${esc(row.code)}" style="color:#16425b;font-weight:700">${esc(isId ? row.nameId : v)}</button>`,
         },
-        { key: 'latest', label: 'Latest', align: 'num', sortable: true, render: (v, row) => `${v} ${esc(row.unit)}` },
-        { key: 'year', label: 'Period', align: 'num', sortable: true },
-        { key: 'source', label: 'Official Source', sortable: true },
+        { key: 'latest', label: isId ? 'Terkini' : 'Latest', align: 'num', sortable: true, render: (v, row) => `${v} ${esc(row.unit)}` },
+        { key: 'year', label: isId ? 'Periode' : 'Period', align: 'num', sortable: true },
+        { key: 'source', label: isId ? 'Sumber Resmi' : 'Official Source', sortable: true },
       ],
       rows: filtered,
     });
+
+    const expTake = isId
+      ? `Utama ${primary.code} (${primary.source}, ${primary.year})${compareOn && secondary ? ` dibandingkan dengan ${secondary.code} (${sName}: ${secondary.latest} ${secondary.unit})` : ''}.`
+      : `Primary ${primary.code} (${primary.source}, ${primary.year})${compareOn && secondary ? ` compared with ${secondary.code} (${sName}: ${secondary.latest} ${secondary.unit})` : ''}.`;
 
     root.innerHTML = `
       <div class="editorial-lead">
@@ -88,7 +105,7 @@ export function renderExplorer(root, { lang, t, params }) {
           <p>${esc(t.expSub)}</p>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <a class="btn btn-outline" href="#/methodology">${esc(t.calendarLink)}</a>
+          <a class="btn btn-outline" href="#/methodology?tab=calendar">${esc(t.calendarLink)}</a>
           <button type="button" class="btn btn-outline" id="dl-exp-csv">CSV</button>
           <button type="button" class="btn btn-outline" id="dl-exp-json">JSON</button>
         </div>
@@ -96,14 +113,14 @@ export function renderExplorer(root, { lang, t, params }) {
 
       <article class="panel" style="margin-bottom:9px">
         <div class="controls-bar" style="margin-bottom:6px">
-          <input class="control-input" id="exp-search" type="search" value="${esc(query)}" placeholder="Search keyword, code (ECO-01), or source..." style="min-width:220px;flex:1">
+          <input class="control-input" id="exp-search" type="search" value="${esc(query)}" placeholder="${isId ? 'Cari kata kunci, kode (ECO-01), inflasi, Papua, atau sumber…' : 'Search keyword, code (ECO-01), inflation, Papua, or source…'}" style="min-width:220px;flex:1">
           <div class="pill-group">${domainPills}</div>
         </div>
         <div class="controls-bar" style="margin-bottom:0">
           <label style="font-size:.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px">
-            <input type="checkbox" id="toggle-compare" ${compareOn ? 'checked' : ''}> Compare with:
+            <input type="checkbox" id="toggle-compare" ${compareOn ? 'checked' : ''}> ${isId ? 'Bandingkan dengan:' : 'Compare with:'}
           </label>
-          <select class="control-select" id="compare-select" aria-label="Secondary indicator" ${compareOn ? '' : 'disabled'} style="max-width:420px;flex:1">
+          <select class="control-select" id="compare-select" aria-label="${isId ? 'Indikator pembanding' : 'Secondary indicator'}" ${compareOn ? '' : 'disabled'} style="max-width:420px;flex:1">
             ${compareOptions}
           </select>
         </div>
@@ -112,9 +129,9 @@ export function renderExplorer(root, { lang, t, params }) {
       <article class="panel" style="margin-bottom:9px">
         <div class="panel-head">
           <div>
-            <span class="code-tag">${esc(primary.code)} · ${esc(primary.domain)}</span>
-            <h2 class="panel-title" style="margin-top:4px">${esc(primary.name)}</h2>
-            <p class="panel-sub">Latest: <strong>${primary.latest} ${esc(primary.unit)}</strong> (${esc(primary.year)}) · 2020–2025 change: ${Number(deltaPrimary) >= 0 ? '+' : ''}${deltaPrimary} ${esc(primary.unit)}</p>
+            <span class="code-tag">${esc(primary.code)} · ${esc(isId ? primary.domainId : primary.domain)}</span>
+            <h2 class="panel-title" style="margin-top:4px">${esc(pName)}</h2>
+            <p class="panel-sub">${isId ? 'Terkini' : 'Latest'}: <strong>${primary.latest} ${esc(primary.unit)}</strong> (${esc(primary.year)}) · ${isId ? 'Perubahan 2020–2025' : '2020–2025 change'}: ${Number(deltaPrimary) >= 0 ? '+' : ''}${deltaPrimary} ${esc(primary.unit)}</p>
           </div>
           <span class="code-tag">${esc(primary.source)} · ${esc(primary.year)}</span>
         </div>
@@ -124,14 +141,14 @@ export function renderExplorer(root, { lang, t, params }) {
           unit: primary.unit === '%' && (!compareOn || secondary.unit === '%') ? '%' : '',
           height: 185,
         })}
-        ${takeawayBox(`Primary ${primary.code} (${primary.source}, ${primary.year})${compareOn && secondary ? ` compared with ${secondary.code} (${secondary.name}: ${secondary.latest} ${secondary.unit})` : ''}.`, t.keyTakeaway)}
+        ${takeawayBox(expTake, t.keyTakeaway)}
       </article>
 
       <article class="panel">
         <div class="panel-head">
           <div>
-            <h3 class="panel-title">Matching Series (${filtered.length} of ${INDICATOR_CATALOG.length})</h3>
-            <p class="panel-sub">Click any indicator title to load it above, or click column headers to sort.</p>
+            <h3 class="panel-title">${isId ? `Seri Cocok (${filtered.length} dari ${INDICATOR_CATALOG.length})` : `Matching Series (${filtered.length} of ${INDICATOR_CATALOG.length})`}</h3>
+            <p class="panel-sub">${isId ? 'Klik judul indikator untuk memuat grafik di atas, atau klik tajuk kolom untuk mengurutkan.' : 'Click any indicator title to load it above, or click column headers to sort.'}</p>
           </div>
         </div>
         ${tableHtml}
@@ -201,3 +218,5 @@ export function renderExplorer(root, { lang, t, params }) {
 
   draw();
 }
+
+export const render = renderExplorer;

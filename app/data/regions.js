@@ -1,12 +1,12 @@
 // Complete 6 macro-regions and all 38 official provinces of Indonesia (BPS Regional Accounts & SUSENAS 2025)
 
 export const MACRO_REGIONS = [
-  { id: 'sumatra', name: 'Sumatra', provincesCount: 10, popM: 62.4, gdpShare: 22.1, grdpPerCapitaUsd: 4680, growth: 4.79, hdi: 74.1, poverty: 8.6, leadDriver: 'Agro-processing, downstream oleochemicals, energy & ports' },
-  { id: 'java', name: 'Java', provincesCount: 6, popM: 158.2, gdpShare: 57.1, grdpPerCapitaUsd: 5410, growth: 5.18, hdi: 76.4, poverty: 8.1, leadDriver: 'Manufacturing corridors, finance, ICT & household consumption' },
-  { id: 'kalimantan', name: 'Kalimantan', provincesCount: 5, popM: 17.6, gdpShare: 8.3, grdpPerCapitaUsd: 6940, growth: 5.44, hdi: 73.6, poverty: 5.7, leadDriver: 'Mineral refining, coal/LNG exports, Nusantara capital works' },
-  { id: 'sulawesi', name: 'Sulawesi', provincesCount: 6, popM: 20.9, gdpShare: 7.1, grdpPerCapitaUsd: 4860, growth: 6.12, hdi: 72.8, poverty: 9.4, leadDriver: 'Nickel smelters, EV battery supply chain, fisheries' },
-  { id: 'bali-nt', name: 'Bali & Nusa Tenggara', provincesCount: 3, popM: 15.8, gdpShare: 2.8, grdpPerCapitaUsd: 2680, growth: 5.25, hdi: 71.9, poverty: 11.4, leadDriver: 'International tourism, creative economy, copper smelting' },
-  { id: 'maluku-papua', name: 'Maluku & Papua', provincesCount: 8, popM: 9.5, gdpShare: 2.6, grdpPerCapitaUsd: 3920, growth: 6.45, hdi: 66.8, poverty: 18.7, leadDriver: 'Copper/gold concentrates, LNG, marine & forestry hubs' },
+  { id: 'sumatra', name: 'Sumatra', nameId: 'Sumatra', provincesCount: 10, popM: 62.4, gdpShare: 22.1, grdpPerCapitaUsd: 4680, growth: 4.79, hdi: 74.1, poverty: 8.6, leadDriver: 'Agro-processing, downstream oleochemicals, energy & ports', leadDriverId: 'Agroindustri, hilirisasi sawit, energi & pelabuhan' },
+  { id: 'java', name: 'Java', nameId: 'Jawa', provincesCount: 6, popM: 158.2, gdpShare: 57.1, grdpPerCapitaUsd: 5410, growth: 5.18, hdi: 76.4, poverty: 8.1, leadDriver: 'Manufacturing corridors, finance, ICT & household consumption', leadDriverId: 'Koridor manufaktur, keuangan, TIK & konsumsi rumah tangga' },
+  { id: 'kalimantan', name: 'Kalimantan', nameId: 'Kalimantan', provincesCount: 5, popM: 17.6, gdpShare: 8.3, grdpPerCapitaUsd: 6940, growth: 5.44, hdi: 73.6, poverty: 5.7, leadDriver: 'Mineral refining, coal/LNG exports, Nusantara capital works', leadDriverId: 'Pemurnian mineral, ekspor LNG/batubara, pembangunan IKN' },
+  { id: 'sulawesi', name: 'Sulawesi', nameId: 'Sulawesi', provincesCount: 6, popM: 20.9, gdpShare: 7.1, grdpPerCapitaUsd: 4860, growth: 6.12, hdi: 72.8, poverty: 9.4, leadDriver: 'Nickel smelters, EV battery supply chain, fisheries', leadDriverId: 'Smelter nikel, rantai pasok baterai EV & perikanan' },
+  { id: 'bali-nt', name: 'Bali & Nusa Tenggara', nameId: 'Bali & Nusa Tenggara', provincesCount: 3, popM: 15.8, gdpShare: 2.8, grdpPerCapitaUsd: 2680, growth: 5.25, hdi: 71.9, poverty: 11.4, leadDriver: 'International tourism, creative economy, copper smelting', leadDriverId: 'Pariwisata internasional, ekonomi kreatif & smelter tembaga' },
+  { id: 'maluku-papua', name: 'Maluku & Papua', nameId: 'Maluku & Papua', provincesCount: 8, popM: 9.5, gdpShare: 2.6, grdpPerCapitaUsd: 3920, growth: 6.45, hdi: 66.8, poverty: 18.7, leadDriver: 'Copper/gold concentrates, LNG, marine & forestry hubs', leadDriverId: 'Konsentrat tembaga/emas, LNG, kelautan & kehutanan' },
 ];
 
 export const PROVINCES_38 = [

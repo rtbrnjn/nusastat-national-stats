@@ -44,7 +44,7 @@ export function renderCpiCalculator(state, lang = 'en') {
   ];
 
   const provOptions = UMP_2025_PROVINCES.map(
-    (p) => `<option value="${esc(p.code)}" ${p.code === prov.code ? 'selected' : ''}>${esc(p.name)} (UMP Rp ${fmtNum(p.umpIdrM, 2)}M)</option>`,
+    (p) => `<option value="${esc(p.code)}" ${p.code === prov.code ? 'selected' : ''}>${esc(p.name)} (UMP Rp ${fmtNum(p.umpIdrM, 2)}${isId ? ' jt' : 'M'})</option>`,
   ).join('');
 
   return `<article class="panel" id="cpi-calculator">
@@ -57,7 +57,7 @@ export function renderCpiCalculator(state, lang = 'en') {
     </div>
 
     <div class="controls-bar" style="margin-bottom:5px">
-      <select class="control-select" id="cpi-prov" aria-label="Province UMP 2025" style="width:100%">${provOptions}</select>
+      <select class="control-select" id="cpi-prov" aria-label="${isId ? 'UMP Provinsi 2025' : 'Province UMP 2025'}" style="width:100%">${provOptions}</select>
     </div>
 
     <div class="calc-grid">

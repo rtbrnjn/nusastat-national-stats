@@ -1,4 +1,4 @@
-// Demographics, population pyramid cohorts, urbanization, labor force, and social indicators
+// Demographics, population pyramid cohorts, urbanization, labor force, and bilingual social indicators
 
 export const PYRAMID_2025 = [
   { age: '75+', male: 1.1, female: 1.5 },
@@ -39,11 +39,11 @@ export const PYRAMID_2035 = [
 ];
 
 export const LABOR_TRANSITION = [
-  { label: 'Trade, Hospitality & Services', value: 49.8, sub: '72.0M workers', color: '#0f4c81' },
-  { label: 'Agriculture, Forestry & Fisheries', value: 28.2, sub: '40.8M workers', color: '#047857' },
-  { label: 'Manufacturing & Utilities', value: 14.4, sub: '20.8M workers', color: '#2563eb' },
-  { label: 'Construction', value: 6.4, sub: '9.3M workers', color: '#d97706' },
-  { label: 'Mining & Quarrying', value: 1.2, sub: '1.7M workers', color: '#c2410c' },
+  { label: 'Trade, Hospitality & Services', labelId: 'Perdagangan, Akomodasi & Jasa', value: 49.8, sub: '72.0M workers', subId: '72,0 jt pekerja', color: '#0f4c81' },
+  { label: 'Agriculture, Forestry & Fisheries', labelId: 'Pertanian, Kehutanan & Perikanan', value: 28.2, sub: '40.8M workers', subId: '40,8 jt pekerja', color: '#047857' },
+  { label: 'Manufacturing & Utilities', labelId: 'Industri Pengolahan & Utilitas', value: 14.4, sub: '20.8M workers', subId: '20,8 jt pekerja', color: '#2563eb' },
+  { label: 'Construction', labelId: 'Konstruksi', value: 6.4, sub: '9.3M workers', subId: '9,3 jt pekerja', color: '#d97706' },
+  { label: 'Mining & Quarrying', labelId: 'Pertambangan & Penggalian', value: 1.2, sub: '1.7M workers', subId: '1,7 jt pekerja', color: '#c2410c' },
 ];
 
 export const URBANIZATION_TREND = {
@@ -53,12 +53,12 @@ export const URBANIZATION_TREND = {
 };
 
 export const SOCIAL_PROGRESS_INDICATORS = [
-  { indicator: 'Life Expectancy at Birth', value: '74.15 years', year: '2025', change: '+0.28 yrs', source: 'Vital Statistics & SUPAS' },
-  { indicator: 'Total Fertility Rate (TFR)', value: '2.11 births/woman', year: '2025', change: '-0.07 vs 2020', source: 'SP2020 / BKKBN Projection' },
-  { indicator: 'Working-Age Share (15–64)', value: '69.2%', year: '2025', change: 'Demographic window', source: 'Population Census Series' },
-  { indicator: 'Adult Literacy Rate (15+)', value: '96.5%', year: '2025', change: '+0.4 pp', source: 'SUSENAS Education Module' },
-  { indicator: 'Mean Years of Schooling (25+)', value: '8.92 years', year: '2025', change: '+0.15 yrs', source: 'HDI Components Release' },
-  { indicator: 'Formal Employment Share', value: '42.4%', year: 'Aug 2025', change: '+1.6 pp YoY', source: 'SAKERNAS Labor Survey' },
-  { indicator: 'Clean Drinking Water Access', value: '92.6%', year: '2025', change: '+1.2 pp YoY', source: 'SUSENAS Housing Module' },
-  { indicator: 'Household Internet Penetration', value: '79.5%', year: '2025', change: '+2.8 pp YoY', source: 'ICT Household Survey' },
+  { indicator: 'Life Expectancy at Birth', indicatorId: 'Usia Harapan Hidup (UHH)', value: '74.15 years', year: '2025', change: '+0.28 yrs', source: 'Vital Statistics & SUPAS' },
+  { indicator: 'Total Fertility Rate (TFR)', indicatorId: 'Angka Kelahiran Total (TFR)', value: '2.11 births/woman', year: '2025', change: '-0.07 vs 2020', source: 'SP2020 / BKKBN Projection' },
+  { indicator: 'Working-Age Share (15–64)', indicatorId: 'Penduduk Usia Produktif (15–64)', value: '69.2%', year: '2025', change: 'Demographic window', source: 'Population Census Series' },
+  { indicator: 'Adult Literacy Rate (15+)', indicatorId: 'Angka Melek Huruf Dewasa (15+)', value: '96.5%', year: '2025', change: '+0.4 pp', source: 'SUSENAS Education Module' },
+  { indicator: 'Mean Years of Schooling (25+)', indicatorId: 'Rata-rata Lama Sekolah (25+)', value: '8.92 years', year: '2025', change: '+0.15 yrs', source: 'HDI Components Release' },
+  { indicator: 'Formal Employment Share', indicatorId: 'Pangsa Pekerja Formal', value: '42.4%', year: 'Aug 2025', change: '+1.6 pp YoY', source: 'SAKERNAS Labor Survey' },
+  { indicator: 'Clean Drinking Water Access', indicatorId: 'Akses Air Minum Layak', value: '92.6%', year: '2025', change: '+1.2 pp YoY', source: 'SUSENAS Housing Module' },
+  { indicator: 'Household Internet Penetration', indicatorId: 'Penetrasi Internet Rumah Tangga', value: '79.5%', year: '2025', change: '+2.8 pp YoY', source: 'ICT Household Survey' },
 ];
